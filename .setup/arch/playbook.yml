@@ -52,11 +52,6 @@
             name: "{{ hostname }}"
           when:
             - hostname|length > 0 and hostname != ansible_hostname
-            - ansible_virtualization_type != "docker"
-
-        - debug:
-            msg: skipped hostname because we're running in docker
-          when: ansible_virtualization_type == "docker"
 
         - name: pacman install core packages
           pacman:
@@ -251,14 +246,12 @@
               dns=none
 
         - name: enable services
-          when: ansible_virtualization_type != "docker"
           block:
 
             - name: restart NetworkManager
-              systemd:
+              systemd_service:
                 name: NetworkManager
                 state: restarted
-
 
             - name: enable services
               systemd_service:
@@ -268,7 +261,6 @@
               loop:
                 - sshd
                 - systemd-timesyncd
-                - docker
                 - bluetooth
                 - cups
                 - dnscrypt-proxy.service
@@ -285,7 +277,6 @@
 
         - debug:
             msg: skipped systemd calls because we're running in docker
-          when: ansible_virtualization_type == "docker"
 
         - name: delete waybar config (will come from dotfiles later)
           file:
@@ -315,7 +306,6 @@
             root_device: '{{ root_device.stdout }}'
 
         - name: steps that need a physical host
-          when: ansible_virtualization_type != "docker"
           block:
 
             - name: update /etc/resolv.conf to use dnscrypt-proxy
@@ -359,7 +349,6 @@
 
         - debug:
             msg: skipped boot loader, dns steps because we're running in docker
-          when: ansible_virtualization_type == "docker"
 
         - name: nvidia config
           when: has_nvidia
@@ -384,7 +373,6 @@
               systemd:
                 name: docker
                 state: restarted
-              when: ansible_virtualization_type != "docker"
 
         - name: ignore lid closing (handled by hyprland)
           lineinfile:
@@ -423,24 +411,6 @@
       set_fact:
         user: "{{ ansible_user_id }}"
       when: user|length == 0 and ansible_user_id != 'root'
-
-    # https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html
-    - name: nvidia config
-      when: has_nvidia
-      block:
-
-        - name: configure container runtime
-          command: "nvidia-ctk runtime configure --runtime=docker --config=/home/{{ user }}/.config/docker/daemon.json"
-          become: true
-          become_user: "{{ user }}"
-
-        - name: restart docker after configuring container runtime
-          command: systemctl --user restart docker
-          become: true
-          become_user: "{{ user }}"
-
-        - name: run nvidia-ctk
-          command: nvidia-ctk config --set nvidia-container-cli.no-cgroups --in-place
 
     - name: user specific
       when: user|length != 0
@@ -639,6 +609,44 @@
 
       become: true
       become_user: "{{ user }}"
+
+    - name: disable docker for system
+      systemd_service:
+        name: "{{ item }}"
+        enabled: false
+        state: stopped
+      loop:
+        - "docker.service"
+        - "docker.socket"
+
+    - name: enable docker for user
+      systemd_service:
+        name: docker.socket
+        enabled: true
+        scope: user
+      become: true
+      become_user: "{{ user }}"
+
+    # https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html
+    - name: nvidia config
+      when: has_nvidia
+      block:
+
+        - name: configure container runtime
+          command: "nvidia-ctk runtime configure --runtime=docker --config=/home/{{ user }}/.config/docker/daemon.json"
+          become: true
+          become_user: "{{ user }}"
+
+        - name: restart docker after configuring container runtime
+          systemd_service:
+            name: docker
+            state: restarted
+            scope: user
+          become: true
+          become_user: "{{ user }}"
+
+        - name: run nvidia-ctk
+          command: nvidia-ctk config --set nvidia-container-cli.no-cgroups --in-place
 
     - name: disable root
       user:
