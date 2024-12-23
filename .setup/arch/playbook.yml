@@ -556,7 +556,6 @@
           command: yay -S --needed --noconfirm {{ item }}
           ignore_errors: true
           loop:
-            - snapd
             - swaylock-effects
             - swww
 
@@ -576,6 +575,7 @@
 
             # development
             - android-studio
+            - aws-cli-v2
             # this is failing: flutter
             - postman-bin
             - visual-studio-code-bin
@@ -589,9 +589,6 @@
             msg: "Failed to install {{ item.item }}: {{ item.stderr }}"
           loop: "{{ yay_install_results.results }}"
           when: item.rc != 0
-
-        - name: install aws cli
-          command: snap install aws-cli --classic
 
         - name: check if cmdline-tools destination file exists
           stat:
