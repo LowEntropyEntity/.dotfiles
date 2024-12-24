@@ -275,9 +275,6 @@
                 - nvidia-suspend
               when: has_nvidia
 
-        - debug:
-            msg: skipped systemd calls because we're running in docker
-
         - name: delete waybar config (will come from dotfiles later)
           file:
             path: /etc/xdg/waybar
@@ -305,50 +302,50 @@
         - set_fact:
             root_device: '{{ root_device.stdout }}'
 
-        - name: steps that need a physical host
-          block:
+        - name: remove all nameserver lines
+          lineinfile:
+            path: /etc/resolv.conf
+            regexp: '^nameserver '
+            state: absent
 
-            - name: update /etc/resolv.conf to use dnscrypt-proxy
-              lineinfile:
-                path: /etc/resolv.conf
-                regexp: '^nameserver '
-                line: 'nameserver 127.0.0.1'
+        - name: update /etc/resolv.conf to use dnscrypt-proxy
+          lineinfile:
+            path: /etc/resolv.conf
+            line: 'nameserver 127.0.0.1'
+            create: true
 
-            - name: set part_uuid variable
-              shell: "blkid | grep {{ root_device }} | grep -oP 'PARTUUID=\"\\K[^\"]+'"
-              register: part_uuid
-              changed_when: false
+        - name: set part_uuid variable
+          shell: "blkid | grep {{ root_device }} | grep -oP 'PARTUUID=\"\\K[^\"]+'"
+          register: part_uuid
+          changed_when: false
 
-            - set_fact:
-                part_uuid: '{{ part_uuid.stdout }}'
+        - set_fact:
+            part_uuid: '{{ part_uuid.stdout }}'
 
-            - name: create boot loader entries
-              copy:
-                content: |
-                  title   Arch Linux
-                  linux   /vmlinuz-linux
-                  initrd  /intel-ucode.img
-                  initrd  {{ item.imageName }}
-                  options options root=PARTUUID={{ part_uuid }} zswap.enabled=0 rw rootfstype=ext4{{ ' nvidia-drm.modeset=1' if has_nvidia else '' }}
-                dest: /boot/loader/entries/{{ item.fileName }}
-              loop:
-                - { imageName: "/initramfs-linux.img", fileName: "arch.conf"}
-                - { imageName: "/initramfs-linux-fallback.img", fileName: "arch-fallback.conf"}
+        - name: create boot loader entries
+          copy:
+            content: |
+              title   Arch Linux
+              linux   /vmlinuz-linux
+              initrd  /intel-ucode.img
+              initrd  {{ item.imageName }}
+              options options root=PARTUUID={{ part_uuid }} zswap.enabled=0 rw rootfstype=ext4{{ ' nvidia-drm.modeset=1' if has_nvidia else '' }}
+            dest: /boot/loader/entries/{{ item.fileName }}
+          loop:
+            - { imageName: "/initramfs-linux.img", fileName: "arch.conf"}
+            - { imageName: "/initramfs-linux-fallback.img", fileName: "arch-fallback.conf"}
 
-            - name: configure ramdisk
-              copy:
-                content: |
-                  MODULES=({{ 'nvidia nvidia_modeset nvidia_uvm nvidia_drm' if has_nvidia else '' }})
-                  BINARIES=()
-                  FILES=()
-                  HOOKS=(base udev autodetect keyboard keymap modconf block filesystems fsck)
-                dest: /etc/mkinitcpio.conf
+        - name: configure ramdisk
+          copy:
+            content: |
+              MODULES=({{ 'nvidia nvidia_modeset nvidia_uvm nvidia_drm' if has_nvidia else '' }})
+              BINARIES=()
+              FILES=()
+              HOOKS=(base udev autodetect keyboard keymap modconf block filesystems fsck)
+            dest: /etc/mkinitcpio.conf
 
-            - name: create ramdisk
-              command: mkinitcpio --config /etc/mkinitcpio.conf --generate /boot/initramfs-linux.img
-
-        - debug:
-            msg: skipped boot loader, dns steps because we're running in docker
+        - name: create ramdisk
+          command: mkinitcpio --config /etc/mkinitcpio.conf --generate /boot/initramfs-linux.img
 
         - name: nvidia config
           when: has_nvidia
@@ -630,6 +627,15 @@
         HOME: "/home/{{ user }}"
       become: true
       become_user: "{{ user }}"
+      register: rootless
+
+    - name: docker rootless install stdout
+      debug:
+        msg: "{{ rootless.stdout }}"
+
+    - name: docker rootless install stderr
+      debug:
+        msg: "{{ rootless.stderr }}"
 
     - name: start docker on startup
       command: "loginctl enable-linger {{ user }}"
@@ -644,13 +650,13 @@
           become: true
           become_user: "{{ user }}"
 
-        # - name: restart docker after configuring container runtime
-        #   systemd_service:
-        #     name: docker
-        #     state: restarted
-        #     scope: user
-        #   become: true
-        #   become_user: "{{ user }}"
+        - name: restart docker after configuring container runtime
+          systemd_service:
+            name: docker
+            state: restarted
+            scope: user
+          become: true
+          become_user: "{{ user }}"
 
         - name: run nvidia-ctk
           command: nvidia-ctk config --set nvidia-container-cli.no-cgroups --in-place
