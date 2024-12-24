@@ -546,7 +546,6 @@
             # development
             - android-studio
             - aws-cli-v2
-            - docker-rootless-extras
             # this is failing: flutter
             - postman-bin
             - visual-studio-code-bin
@@ -620,27 +619,50 @@
         - "docker.service"
         - "docker.socket"
 
-    - name: get user id
-      command: "id -u {{ user }}"
-      register: user_id
+    # https://docs.docker.com/engine/security/rootless/
+    - name: configure sysctl for docker rootless
+        copy:
+          content: |
+            kernel.unprivileged_userns_clone=1
+          dest: /etc/sysctl.d/99-docker-rootless.conf
+          owner: root
+          group: root
+          mode: '0644'
+
+    - name: restart sysctl
+      command: sysctl --system
+
+    - name: install docker rootless
+      shell: curl -fsSL https://get.docker.com/rootless | sh
+      failed_when: false
       changed_when: false
-
-    - set_fact:
-        user_uid: '{{ user_id.stdout }}'
-
-    - debug:
-        msg: "user_uid: {{ user_uid }}"
-
-    - name: enable docker for user
-      systemd_service:
-        name: docker.socket
-        enabled: true
-        scope: user
-      # environment:
-      #   XDG_RUNTIME_DIR: "/run/user/{{ user_uid }}"
-      #   DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ user_uid }}/bus"
       become: true
       become_user: "{{ user }}"
+
+    - name: start docker on startup
+      command: "loginctl enable-linger {{ user }}"
+
+    # - name: get user id
+    #   command: "id -u {{ user }}"
+    #   register: user_id
+    #   changed_when: false
+    #
+    # - set_fact:
+    #     user_uid: '{{ user_id.stdout }}'
+    #
+    # - debug:
+    #     msg: "user_uid: {{ user_uid }}"
+    #
+    # - name: enable docker for user
+    #   systemd_service:
+    #     name: docker.socket
+    #     enabled: true
+    #     scope: user
+    #   # environment:
+    #   #   XDG_RUNTIME_DIR: "/run/user/{{ user_uid }}"
+    #   #   DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ user_uid }}/bus"
+    #   become: true
+    #   become_user: "{{ user }}"
 
     # https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html
     - name: nvidia config
