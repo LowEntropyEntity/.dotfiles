@@ -626,6 +626,8 @@
 
     - name: install docker rootless
       shell: curl -fsSL https://get.docker.com/rootless | sh
+      environment:
+        HOME: "/home/{{ user }}"
       become: true
       become_user: "{{ user }}"
 
@@ -641,6 +643,14 @@
           command: "nvidia-ctk runtime configure --runtime=docker --config=/home/{{ user }}/.config/docker/daemon.json"
           become: true
           become_user: "{{ user }}"
+
+        # - name: restart docker after configuring container runtime
+        #   systemd_service:
+        #     name: docker
+        #     state: restarted
+        #     scope: user
+        #   become: true
+        #   become_user: "{{ user }}"
 
         - name: run nvidia-ctk
           command: nvidia-ctk config --set nvidia-container-cli.no-cgroups --in-place

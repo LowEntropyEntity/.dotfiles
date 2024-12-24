@@ -7,6 +7,5 @@ prepare:
 	sh -c 'echo "localhost ansible_connection=local" > /etc/ansible/hosts'
 	mkdir -p /var/log
 	touch /var/log/ansible.log
-	chmod 600 /var/log/ansible.log
 	echo '[defaults]' > /etc/ansible/ansible.cfg
 	echo 'log_path = /var/log/ansible.log' >> /etc/ansible/ansible.cfg
