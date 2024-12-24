@@ -621,13 +621,13 @@
 
     # https://docs.docker.com/engine/security/rootless/
     - name: configure sysctl for docker rootless
-        copy:
-          content: |
-            kernel.unprivileged_userns_clone=1
-          dest: /etc/sysctl.d/99-docker-rootless.conf
-          owner: root
-          group: root
-          mode: '0644'
+      copy:
+        content: |
+          kernel.unprivileged_userns_clone=1
+        dest: /etc/sysctl.d/99-docker-rootless.conf
+        owner: root
+        group: root
+        mode: '0644'
 
     - name: restart sysctl
       command: sysctl --system
