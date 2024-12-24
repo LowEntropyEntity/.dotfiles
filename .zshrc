@@ -87,10 +87,9 @@ fi
 # Compilation flags
 export ARCHFLAGS="-arch x86_64"
 
-export XDG_RUNTIME_DIR=$HOME/.docker/run
 export PATH="$HOME/bin:$PATH"
 export PATH="$HOME/android-sdk/cmdline-tools/latest/bin:$PATH"
-export DOCKER_HOST=unix:///run/user/$(id -u)/docker.sock
+export DOCKER_HOST=unix://$XDG_RUNTIME_DIR/docker.sock
 
 # if [ -x "$(command -v tmux)" ] && [ -n "${DISPLAY}" ] && [ -z "${TMUX}" ]; then
 # 	exec tmux >/dev/null 2>&1
