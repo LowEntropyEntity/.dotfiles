@@ -87,6 +87,7 @@ fi
 # Compilation flags
 export ARCHFLAGS="-arch x86_64"
 
+export XDG_RUNTIME_DIR=$HOME/.docker/run
 export PATH="$HOME/bin:$PATH"
 export PATH="$HOME/android-sdk/cmdline-tools/latest/bin:$PATH"
 export DOCKER_HOST=unix:///run/user/$(id -u)/docker.sock

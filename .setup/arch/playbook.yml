@@ -621,10 +621,22 @@
     - name: restart sysctl
       command: sysctl --system
 
+    - name: enable systemd linger
+      command: "loginctl enable-linger {{ user }}"
+
+    - name: get user id
+      command: "id -u {{ user }}"
+      register: user_id
+      changed_when: false
+
+    - set_fact:
+        user_uid: '{{ user_id.stdout }}'
+
     - name: install docker rootless
       shell: curl -fsSL https://get.docker.com/rootless | sh
       environment:
         HOME: "/home/{{ user }}"
+        XDG_RUNTIME_DIR: "/run/user/{{ user_uid }}"
       become: true
       become_user: "{{ user }}"
       register: rootless
@@ -636,9 +648,6 @@
     - name: docker rootless install stderr
       debug:
         msg: "{{ rootless.stderr }}"
-
-    - name: start docker on startup
-      command: "loginctl enable-linger {{ user }}"
 
     # https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html
     - name: nvidia config
