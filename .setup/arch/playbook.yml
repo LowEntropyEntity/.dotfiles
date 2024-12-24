@@ -366,14 +366,6 @@
                 content: 'ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ATTR{class}=="0x030000", ATTR{power/control}="auto"'
                 dest: /etc/udev/rules.d/99-nvidia.rules
 
-            - name: configure nvidia for docker
-              command: nvidia-ctk runtime configure --runtime=docker
-
-            - name: restart docker
-              systemd:
-                name: docker
-                state: restarted
-
         - name: ignore lid closing (handled by hyprland)
           lineinfile:
             path: /etc/systemd/logind.conf
@@ -642,28 +634,6 @@
     - name: start docker on startup
       command: "loginctl enable-linger {{ user }}"
 
-    # - name: get user id
-    #   command: "id -u {{ user }}"
-    #   register: user_id
-    #   changed_when: false
-    #
-    # - set_fact:
-    #     user_uid: '{{ user_id.stdout }}'
-    #
-    # - debug:
-    #     msg: "user_uid: {{ user_uid }}"
-    #
-    # - name: enable docker for user
-    #   systemd_service:
-    #     name: docker.socket
-    #     enabled: true
-    #     scope: user
-    #   # environment:
-    #   #   XDG_RUNTIME_DIR: "/run/user/{{ user_uid }}"
-    #   #   DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ user_uid }}/bus"
-    #   become: true
-    #   become_user: "{{ user }}"
-
     # https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html
     - name: nvidia config
       when: has_nvidia
@@ -671,14 +641,6 @@
 
         - name: configure container runtime
           command: "nvidia-ctk runtime configure --runtime=docker --config=/home/{{ user }}/.config/docker/daemon.json"
-          become: true
-          become_user: "{{ user }}"
-
-        - name: restart docker after configuring container runtime
-          systemd_service:
-            name: docker
-            state: restarted
-            scope: user
           become: true
           become_user: "{{ user }}"
 
