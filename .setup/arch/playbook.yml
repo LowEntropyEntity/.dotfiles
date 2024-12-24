@@ -626,8 +626,6 @@
 
     - name: install docker rootless
       shell: curl -fsSL https://get.docker.com/rootless | sh
-      failed_when: false
-      changed_when: false
       become: true
       become_user: "{{ user }}"
 
