@@ -60,6 +60,7 @@
             - archiso                    # create an arch linux ISO
             - base-devel                 # Core Arch build environment (makepkg, gcc, etc.)
             - linux-headers
+            - linux-lts-headers
             - man-db                     # Man pages database
             - networkmanager
             - openssh                    # SSH client/server
