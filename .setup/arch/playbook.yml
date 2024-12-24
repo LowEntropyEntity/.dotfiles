@@ -546,6 +546,7 @@
             # development
             - android-studio
             - aws-cli-v2
+            - docker-rootless-extras
             # this is failing: flutter
             - postman-bin
             - visual-studio-code-bin
@@ -619,11 +620,25 @@
         - "docker.service"
         - "docker.socket"
 
+    - name: get user id
+      command: "id -u {{ user }}"
+      register: user_id
+      changed_when: false
+
+    - set_fact:
+        user_uid: '{{ user_id.stdout }}'
+
+    - debug:
+        msg: "user_uid: {{ user_uid }}"
+
     - name: enable docker for user
       systemd_service:
         name: docker.socket
         enabled: true
         scope: user
+      # environment:
+      #   XDG_RUNTIME_DIR: "/run/user/{{ user_uid }}"
+      #   DBUS_SESSION_BUS_ADDRESS: "unix:path=/run/user/{{ user_uid }}/bus"
       become: true
       become_user: "{{ user }}"
 
