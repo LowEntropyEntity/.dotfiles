@@ -245,6 +245,18 @@
               [main]
               dns=none
 
+        # - name: remove all nameserver lines
+        #   lineinfile:
+        #     path: /etc/resolv.conf
+        #     regexp: '^nameserver '
+        #     state: absent
+
+        - name: update /etc/resolv.conf to use dnscrypt-proxy
+          lineinfile:
+            path: /etc/resolv.conf
+            line: 'nameserver 17.0.0.1'
+            create: true
+
         - name: enable services
           block:
 
@@ -301,18 +313,6 @@
 
         - set_fact:
             root_device: '{{ root_device.stdout }}'
-
-        - name: remove all nameserver lines
-          lineinfile:
-            path: /etc/resolv.conf
-            regexp: '^nameserver '
-            state: absent
-
-        - name: update /etc/resolv.conf to use dnscrypt-proxy
-          lineinfile:
-            path: /etc/resolv.conf
-            line: 'nameserver 127.0.0.1'
-            create: true
 
         - name: set part_uuid variable
           shell: "blkid | grep {{ root_device }} | grep -oP 'PARTUUID=\"\\K[^\"]+'"
