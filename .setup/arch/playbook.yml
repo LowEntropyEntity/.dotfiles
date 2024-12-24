@@ -219,15 +219,6 @@
             name:
               - cups                       # Printing system
 
-        - name: configure dnscrypt-proxy for DoH
-          copy:
-            content: |
-              server_names = ['cloudflare', 'google']
-            dest: /etc/dnscrypt-proxy/dnscrypt-proxy.toml
-            owner: root
-            group: root
-            mode: '0644'
-
         - name: configure ssh
           copy:
             content: |
@@ -237,24 +228,34 @@
 
         - name: disable NetworkManager DNS overwrites
           copy:
-            dest: /etc/NetworkManager/conf.d/dns-override.conf
-            owner: root
-            group: root
-            mode: '0644'
             content: |
               [main]
               dns=none
+            dest: /etc/NetworkManager/NetworkManager.conf
+            owner: root
+            group: root
+            mode: '0644'
 
-        # - name: remove all nameserver lines
-        #   lineinfile:
-        #     path: /etc/resolv.conf
-        #     regexp: '^nameserver '
-        #     state: absent
+        - name: configure dnscrypt-proxy for DoH
+          copy:
+            content: |
+              listen_addresses = [ ]
+              server_names = ['cloudflare', 'google']
+            dest: /etc/dnscrypt-proxy/dnscrypt-proxy.toml
+            owner: root
+            group: root
+            mode: '0644'
+
+        - name: remove all nameserver lines
+          lineinfile:
+            path: /etc/resolv.conf
+            regexp: '^nameserver '
+            state: absent
 
         - name: update /etc/resolv.conf to use dnscrypt-proxy
           lineinfile:
             path: /etc/resolv.conf
-            line: 'nameserver 17.0.0.1'
+            line: 'nameserver 127.0.0.1'
             create: true
 
         - name: enable services
@@ -275,7 +276,7 @@
                 - systemd-timesyncd
                 - bluetooth
                 - cups
-                - dnscrypt-proxy.service
+                - dnscrypt-proxy.socket
 
             - name: enable nvidia services
               systemd_service:
