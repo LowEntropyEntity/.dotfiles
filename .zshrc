@@ -81,30 +81,29 @@ source $ZSH/oh-my-zsh.sh
 if [[ -n $SSH_CONNECTION ]]; then
   export EDITOR='vim'
 else
-  export EDITOR='mvim'
+  export EDITOR='nvim'
 fi
 
 # Compilation flags
 export ARCHFLAGS="-arch x86_64"
 
-# Set personal aliases, overriding those provided by oh-my-zsh libs,
-# plugins, and themes. Aliases can be placed here, though oh-my-zsh
-# users are encouraged to define aliases within the ZSH_CUSTOM folder.
-# For a full list of active aliases, run `alias`.
-#
-# Example aliases
-# alias zshconfig="mate ~/.zshrc"
-# alias ohmyzsh="mate ~/.oh-my-zsh"
+export PATH="$HOME/bin:$PATH"
+export PATH="$HOME/android-sdk/cmdline-tools/latest/bin:$PATH"
+export DOCKER_HOST=unix://$XDG_RUNTIME_DIR/docker.sock
 
-if [ -x "$(command -v tmux)" ] && [ -n "${DISPLAY}" ] && [ -z "${TMUX}" ]; then
-	exec tmux >/dev/null 2>&1
-fi
+# if [ -x "$(command -v tmux)" ] && [ -n "${DISPLAY}" ] && [ -z "${TMUX}" ]; then
+# 	exec tmux >/dev/null 2>&1
+# fi
 
 . ~/.aliases
 
 if [ -f ~/.env ]; then
 	export $(cat ~/.env | xargs)
 fi
+
+for file in ~/.env-*(N); do
+	export $(cat $file | xargs)
+done
 
 setopt completealiases
 
@@ -119,6 +118,14 @@ fi
 gpg -K | grep sean@sean.xyz 1>/dev/null 2>&1 || gpg --card-status 1> /dev/null || echo 'private key not found: run gpg --card-status\n'
 
 if [ ! -d ~/.password-store ]; then
-	echo 'passwords not found, run: git clone git@github.com:LowEntropyEntity/pass .password-store\n'
+	echo 'passwords not found, run: git clone git@github.com:LowEntropyEntity/pass ~/.password-store\n'
+fi
+
+if [ ! -d ~/media/pictures/wallpaper ]; then
+	echo 'wallpaper not found, run: git clone git@github.com:LowEntropyEntity/wallpaper.git ~/media/pictures/wallpaper\n'
+fi
+
+if [ ! -d ~/src ]; then
+	echo 'src not found, run: git clone git@github.com:LowEntropyEntity/src.git --recursive ~/src\n'
 fi
 

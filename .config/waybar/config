@@ -7,10 +7,9 @@
 	// Choose the order of the modules
 	"modules-left": ["hyprland/workspaces", "custom/media"],
 	"modules-center": ["clock"],
-	"modules-right": ["mpd", "idle_inhibitor", "pulseaudio", "network", "backlight", "keyboard-state", "bluetooth", "battery", "tray"],
+	"modules-right": ["idle_inhibitor", "keyboard-state", "wireplumber", "network", "backlight", "bluetooth", "battery", "tray"],
 
 	"hyprland/workspaces": {
-		// "format": "{icon}",
 		"format": " {windows} <sub>{icon}</sub> ",
 		"format-window-separator": " ",
 		"window-rewrite-default": "",
@@ -25,13 +24,36 @@
 			"obs": "󰃽",
 			"slack": "",
 			"spotify": "󰓇",
-			"vlc": "󰕼"
+			"vlc": "󰕼",
+			"zoom": "󰍫"
 		},
 		"disable-scroll": true,
 		"all-outputs": true,
 		"active-only": false,
 		"on-click": "activate",
-		"persistent-workspaces": {},
+		"persistent-workspaces": {}
+	},
+
+	"wireplumber": {
+		// "format-muted": "",
+		"format": "{volume}% {icon}",
+		"format-bluetooth": "{volume}% {icon}",
+		"format-bluetooth-muted": " {icon}",
+		"format-muted": " {node_name}",
+		"format-source": "{volume}% ",
+		"format-source-muted": "",
+		"format-icons": {
+			"headphone": "",
+			"hands-free": "",
+			"headset": "󰋎",
+			"phone": "",
+			"portable": "",
+			"car": "",
+			"default": ["", "", ""]
+		},
+		"on-click-middle": "pavucontrol",
+		"on-click": "~/.config/waybar/scripts/audio_changer.py",
+		"on-click-right": "~/.config/waybar/scripts/audio_input_changer.py"
 	},
 
 	"keyboard-state": {
@@ -41,10 +63,10 @@
 		"format-icons": {
 			"locked": "",
 			"unlocked": ""
-		}
+		},
+		"binding-keys": [1, 69, 70]
 	},
 
-	// Bluetooth
 	"bluetooth": {
 		"format": " {status}",
 		"format-disabled": "",
@@ -116,25 +138,6 @@
 		"format-linked": "{ifname} (No IP) 󰈀",
 		"format-disconnected": "Disconnected ⚠",
 		"format-alt": "{ipaddr}/{cidr}"
-	},
-	"pulseaudio": {
-		// "scroll-step": 1, // %, can be a float
-		"format": "{volume}% {icon} {format_source}",
-		"format-bluetooth": "{volume}% {icon} {format_source}",
-		"format-bluetooth-muted": " {icon} {format_source}",
-		"format-muted": " {format_source}",
-		"format-source": "{volume}% ",
-		"format-source-muted": "",
-		"format-icons": {
-			"headphone": "",
-			"hands-free": "",
-			"headset": "󰋎",
-			"phone": "",
-			"portable": "",
-			"car": "",
-			"default": ["", "", ""]
-		},
-		"on-click": "pavucontrol"
 	},
 }
 

@@ -173,12 +173,11 @@ label:focus {
 }
 
 #wireplumber {
-	background-color: #fff0f5;
-	color: #000000;
+	color: @peach;
 }
 
 #wireplumber.muted {
-	background-color: #f53c3c;
+	color: @mauve;
 }
 
 #custom-media {
@@ -217,11 +216,11 @@ label:focus {
 }
 
 #idle_inhibitor {
-	color: @mauve;
+	color: @sapphire;
 }
 
 #idle_inhibitor.activated {
-	color: @green;
+	color: @red;
 }
 
 #mpd {
@@ -250,17 +249,19 @@ label:focus {
 }
 
 #keyboard-state {
-	color: @rosewater;
+	color: @mauve;
 	padding: 0 0px;
 	margin: 0 5px;
 	min-width: 16px;
 }
 
 #keyboard-state > label {
+	color: @mauve;
 	padding: 0 5px;
 }
 
 #keyboard-state > label.locked {
+	color: @red;
 	background: rgba(0, 0, 0, 0.2);
 }
 

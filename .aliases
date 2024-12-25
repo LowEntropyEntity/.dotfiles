@@ -1,51 +1,106 @@
+### directory navigation and stack
 alias cd='pushd > /dev/null'
 alias p='popd'
+alias ..='pushd ..'
+alias ...='pushd ../..'
+alias ....='pushd ../../..'
 
-alias aws-login='aws sso login --sso-session'
+### file listing and viewing
+if command -v bat &>/dev/null; then
+	alias cat='bat --style=plain'
+fi
+if command -v eza &>/dev/null; then
+	alias l='eza -1 --classify'
+	alias la='eza -1 -a --classify'
+	alias ll='eza -l --classify'
+	alias lla='eza -l -a --classify'
+else
+	alias l='ls -1FG'
+	alias la='ls -1AFG'
+	alias ll='ls -lFG'
+	alias lla='ls -lAFG'
+fi
+alias findfile='find . | grep' # find file by name
 
-alias chrome='chromium --guest --enable-chrome-browser-cloud-management &'
-
+### dotfiles and git
 alias dot='git --git-dir=$HOME/.dotfiles/ --work-tree=$HOME'
-alias dot-sync='dot pull --rebase --autostash && dot reset -- $HOME && dot ls-files --deleted -z | xargs -0 git --git-dir=$HOME/.dotfiles/ --work-tree=$HOME checkout'
+alias dot-sync='dot pull --rebase --autostash && dot reset -- $HOME && dot ls-files --deleted -z | xargs -0 git --git-dir=$HOME/.dotfiles/ --work-tree=$HOME checkout && echo "dotfiles synced successfully"'
 
-alias l='ls -1FG'	# list file name only, slashes after directories, color, don't recurse
-alias la='ls -1AFG'	# list file name only, all entries, slashes after directories, color, don't recurse
-alias ll='ls -lFG'	# long format, slashes after directories, color, don't recurse
-alias lla='ls -lAFG'	# long format, all entries, slashes after directories, color, don't recurse
+### networking
+alias lsports='ss -tulpn'
 
-alias now='\date +"%F %T"'
+### datetime
+alias now='date +"%F %T"'
 
-alias nvidia-check='cat /boot/loader/entries/*.conf | grep nvidia &> /dev/null || echo "nvidia not found in /boot/loader/entries/*.conf, consider adding nvidia-drm.modeset=1"'
+### clipboard/sharing
+alias share-dir='(tree -a; echo; find . -type f | while read f; do echo "===== $f ====="; cat "$f"; echo; done) | wl-copy'
+alias share-dir-git='(git ls-tree -r --name-only HEAD; echo; git ls-tree -r --name-only HEAD | while read f; do echo "===== $f ====="; cat "$f"; echo; done) | wl-copy'
 
-alias findfile='find . | grep'	# find file by name
-
-alias stealth='set +o history'	# stop writing commands to history
-alias .stealth='set -o history'	# resume writing commands to history
-
+### security and auth
 alias totp='oathtool --base32 --totp'
 
-alias sudo='sudo '	# makes aliases available in sudo
+### aws and ai
+alias aws-login='aws sso login --profile'
+alias ai='chatgpt'
 
+### browsers
+alias chrome="docker exec -it ungoogled-chromium /opt/ungoogledchromium/chrome --ozone-platform=wayland --no-sandbox --new-window"
+
+### shell history/stealth
+alias stealth='set +o history'
+alias .stealth='set -o history'
+
+### sudo alias (to allow aliases under sudo)
+alias sudo='sudo '
+
+### compression and archives
 alias gz='gzip'
 alias tar.gz='tar-gz'
+alias tgz='tar -cvzf'
 alias .tar='tar -xvf'
 alias .tar.gz='.tar'
 alias .tar.xz='.tar'
 alias .gz='gzip -d'
+alias .tgz='tar -xvf'
 
+### temporary dirs and files
 alias tmp='cd $(mktemp -d)'
 alias tmp.='cd $(mktemp -d --tmpdir=./)'
 alias tmpfile='mktemp'
 alias tmpfile.='mktemp --tmpdir=./'
 
+### removing and shredding
 alias rm.='rm -frv $(pwd) && p'
 alias srm='shred -u -z'
 
+### audio testing
 alias speakers='speaker-test -t wav -c 2'
 
+### adb and mirroring
 alias adbmirror='adb shell screenrecord --output-format=h264 - | ffplay -framerate 60 -probesize 32 -sync video -'
 
-alias redis-start='docker run --rm -p 6379:6379 redis'
+### dockerized redis
+alias redis='docker run --rm -p 6379:6379 redis'
 
-alias vim='nvim'
+### editor
+if command -v nvim &>/dev/null; then
+	alias vim='nvim'
+	alias vi='nvim'
+elif command -v vim &>/dev/null; then
+	alias vi='vim'
+elif command -v vi &>/dev/null; then
+	alias vim='vi'
+fi
+
+### vpn
+alias vpn-sonos='sudo openconnect corp-vpn.sonos.com -u sean.simonsen --useragent=AnyConnect'
+
+### zsh reload
+alias zshrc='omz reload'
+
+# global aliases
+if command -v bat &>/dev/null; then
+	alias -g -- -h='-h 2>&1 | bat --language=help --style=plain'
+	alias -g -- --help='--help 2>&1 | bat --language=help --style=plain'
+fi
 

@@ -4,228 +4,440 @@
   vars_prompt:
 
     - name: user
-      prompt: enter non-root user name
+      prompt: non-root user name (leave blank to skip)
       private: false
+      default: ""
 
     - name: user_password
-      prompt: enter user password
+      prompt: user password (leave blank if skipped above)
+      unsafe: true
+      private: true
+      confirm: true
+      encrypt: "sha512_crypt"
+      default: ""
 
-    - name: user_password_confirm
-      prompt: re-enter user password to confirm
+    - name: hostname
+      prompt: enter hostname (leave blank to skip)
+      private: false
+      default: ""
 
   tasks:
 
-    - name: validate password
-      assert:
-        that:
-          - user_password == user_password_confirm
+    - name: detect nvidia gpu
+      shell: "lspci | grep -i nvidia"
+      register: nvidia_check
+      failed_when: false
+      changed_when: false
 
-    - name: pacman update
-      pacman:
-        update_cache: true
-        upgrade: true
-
-    - name: install base apps
-      pacman:
-        name:
-          - alsa-utils
-          - aws-cli-v2
-          - base-devel
-          - blueman
-          - bluez
-          - brightnessctl
-          - ccid
-          - docker
-          - docker-compose
-          - dolphin
-          - fzf
-          - gdb
-          - git
-          - gnupg
-          - hopenpgp-tools
-          - less
-          - libfido2
-          - libva
-          - linux-lts-headers
-          - mako
-          - man-db
-          - pass
-          - pcsclite
-          - pipewire
-          - rustup
-          - openssh
-          - phonon-qt5-vlc
-          - tmux
-          - wl-clipboard
-          - xdg-user-dirs
-          - yubikey-manager
-          - yubikey-personalization
-          - zsh
-          - zsh-completions
-
-    - name: install visual apps
-      pacman:
-        name:
-          - alacritty
-          - chromium
-          - code
-          - font-manager
-          - hyprland
-          - neovim
-          - nvidia-dkms
-          - obs-studio
-          - pavucontrol
-          - polkit-kde-agent
-          - qt5-wayland
-          - qt6-wayland
-          - qt5ct
-          - ttf-hack-nerd
-          - ttf-jetbrains-mono-nerd
-          - udiskie
-          - vlc
-          - waybar
-          - waylock
-          - wget
-          - wofi
-
-    - name: configure ssh
-      get_url:
-        url: https://raw.githubusercontent.com/LowEntropyEntity/dotfiles/main/.setup/arch/20-force_publickey_auth.conf
-        dest: /etc/ssh/sshd_config.d/20-force_publickey_auth.conf
-
-    - name: enable sshd
-      systemd_service:
-        name: sshd
-        enabled: true
-        state: started
-
-    - name: enable timesync
-      systemd_service:
-        name: systemd-timesyncd
-        enabled: true
-        state: started
-
-    - name: enable docker
-      systemd_service:
-        name: docker
-        enabled: true
-        state: started
-
-    - name: enable bluetooth
-      systemd_service:
-        name: bluetooth
-        enabled: true
-        state: started
-
-    - name: enable nvidia-hibernate
-      systemd_service:
-        name: nvidia-hibernate
-        enabled: true
-
-    - name: enable nvidia-resume
-      systemd_service:
-        name: nvidia-resume
-        enabled: true
-
-    - name: enable nvidia-suspend
-      systemd_service:
-        name: nvidia-suspend
-        enabled: true
-
-    - name: delete waybar config (will come from dotfiles later)
-      file:
-        path: /etc/xdg/waybar
-        state: absent
-
-    - name: create boot loader config
-      get_url:
-        url: https://raw.githubusercontent.com/LowEntropyEntity/dotfiles/main/.setup/arch/systemd-boot/loader.conf
-        dest: /boot/loader/loader.conf
-
-    - name: get root partition device
-      shell: df -h | grep '[[:space:]]/$' | cut -d ' ' -f1
-      register: root_device
     - set_fact:
-        root_device: '{{ root_device.stdout }}'
+        has_nvidia: "{{ nvidia_check.stdout != '' }}"
 
-    - name: set part_uuid variable
-      shell: "blkid | grep {{ root_device }} | grep -oP 'PARTUUID=\"\\K[^\"]+'"
-      register: part_uuid
-    - set_fact:
-        part_uuid: '{{ part_uuid.stdout }}'
-
-    - name: fetch boot loader entry template
-      get_url:
-        url: https://raw.githubusercontent.com/LowEntropyEntity/dotfiles/main/.setup/arch/systemd-boot/arch.conf
-        dest: ./arch.conf
-
-    - name: fetch boot loader fallback entry template
-      get_url:
-        url: https://raw.githubusercontent.com/LowEntropyEntity/dotfiles/main/.setup/arch/systemd-boot/arch-fallback.conf
-        dest: ./arch-fallback.conf
-
-    - name: create boot loader entry
-      template:
-        src: arch.conf
-        dest: /boot/loader/entries/arch.conf
-
-    - name: create boot loader fallback entry
-      template:
-        src: arch-fallback.conf
-        dest: /boot/loader/entries/arch-fallback.conf
-
-    - name: configure ramdisk
-      get_url:
-        url: https://raw.githubusercontent.com/LowEntropyEntity/dotfiles/main/.setup/arch/mkinitcpio.conf
-        dest: /etc/mkinitcpio.conf
-
-    - name: create ramdisk
-      command: mkinitcpio --config /etc/mkinitcpio.conf --generate /boot/initramfs-custom.img
-
-    - name: configure modprobe
-      copy:
-        content: options nvidia-drm modeset=1
-        dest: /etc/modprobe.d/nvidia.conf
-
-    - name: grant wheel group sudo
-      copy:
-        content: "%wheel ALL=(ALL) NOPASSWD: ALL\n"
-        dest: "/etc/sudoers.d/wheel"
-
-    - name: create user
-      user:
-        append: true
-        groups:
-          - docker
-          - wheel
-        name: "{{ user }}"
-        password: "{{ user_password | password_hash('sha512') }}"
-        shell: /usr/bin/zsh
-
-    - name: user specific
+    - name: root specific
+      when: ansible_user_id == 'root'
       block:
 
-        - name: check for oh-my-zsh
-          stat: "path=/home/{{ user }}/.oh-my-zsh"
-          register: ohmyzsh
+        - name: fail if running as root but no user specified
+          assert:
+            that:
+              - not (ansible_user_id == 'root' and user|length == 0)
+            fail_msg: "must specify a user when running as root"
 
-        - name: install oh-my-zsh
-          shell: sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
-          when: not ohmyzsh.stat.exists
+        - name: pacman update
+          pacman:
+            update_cache: true
+            upgrade: true
+
+        - name: set hostname
+          hostname:
+            name: "{{ hostname }}"
+          when:
+            - hostname|length > 0 and hostname != ansible_hostname
+
+        - name: pacman install core packages
+          pacman:
+            name: "{{ item }}"
+          loop:
+            - archiso                    # create an arch linux ISO
+            - base-devel                 # Core Arch build environment (makepkg, gcc, etc.)
+            - linux-headers
+            - linux-lts-headers
+            - man-db                     # Man pages database
+            - networkmanager
+            - openssh                    # SSH client/server
+            - less
+            - tmux
+            - unzip
+            - usbutils
+            - wget
+            - xdg-user-dirs
+            - zsh
+            - zsh-completions
+
+        - name: pacman install audio packages
+          pacman:
+            name: "{{ item }}"
+          loop:
+            - alsa-utils                 # ALSA sound utilities (amixer, etc.)
+            - pavucontrol                # GUI volume control for PipeWire/PulseAudio
+            - pipewire                   # Next-gen audio/video server
+            - wireplumber                # Session manager for PipeWire
+            - phonon-qt5-vlc             # Qt multimedia backend using VLC
+
+        - name: pacman install bluetooth packages
+          pacman:
+            name: "{{ item }}"
+          loop:
+            - blueman                    # Bluetooth manager GUI
+            - bluez                      # Official Bluetooth protocol stack
+            - bluez-utils                # Bluetooth command-line utilities
+
+        - name: pacman install networking packages
+          pacman:
+            name: "{{ item }}"
+          loop:
+            - bind                       # DNS tools (e.g. `dig`)
+            - dnscrypt-proxy             # DNS encryption (DoH/DoT)
+            - ccid                       # Smart card CCID driver
+            - pcsclite                   # Daemon to communicate with smartcards
+            - hopenpgp-tools             # Additional PGP utilities
+            - yubikey-manager            # Manage YubiKeys
+            - yubikey-personalization    # Configure YubiKey parameters
+            - gnupg
+            - gocryptfs                  # Encrypted FUSE filesystem
+            - jq                         # JSON command-line processor
+            - pass                       # GPG-based password manager
+            - pass-otp                   # OTP extension for pass
+
+        - name: pacman install cli packages
+          pacman:
+            name: "{{ item }}"
+          loop:
+            - fzf                        # Fuzzy finder for the command line
+            - rustup                     # Rust toolchain installer
+            - gdb
+
+        - name: pacman install file management, utility packages
+          pacman:
+            name: "{{ item }}"
+          loop:
+            - dolphin                    # KDE file manager
+            - libva                      # VA-API for video acceleration
+            - brightnessctl              # Control screen brightness via CLI
+            - libfido2                   # FIDO/U2F authentication library
+            - zbar                       # Barcode/QR code scanner CLI tools
+
+        - name: pacman install docker packages
+          pacman:
+            name: "{{ item }}"
+          loop:
+            - docker
+            - docker-buildx
+            - docker-compose
+
+        - name: pacman install display packages
+          pacman:
+            name: "{{ item }}"
+          loop:
+            - mako                       # Wayland notification daemon
+            - usbip                      # USB over IP utility
+            - wl-clipboard               # Wayland clipboard utilities
+
+        - name: pacman install development packages
+          pacman:
+            name: "{{ item }}"
+          loop:
+            - clang
+            - cmake
+            - dart
+            - git
+            - git-lfs
+            - go
+            - gradle
+            - jdk-openjdk
+            - mitmproxy
+            - nodejs
+            - npm
+
+        - name: pacman install visual packages
+          pacman:
+            name: "{{ item }}"
+          loop:
+            # === Terminal / Browsers / Editors ===
+            - alacritty
+            - chromium
+            - neovim
+            - blender
+
+            # === Linux command replacements ===
+            - bat                        # cat
+            - eza                        # ls
+
+            # === Wayland Compositor & Related Tools ===
+            - hyprland
+            - hyprpicker                 # Color picker for Wayland
+            - grim                       # Screenshot tool for Wayland
+            - slurp                      # Select regions in Wayland (e.g. screenshot)
+            - swayidle                   # Idle management for Wayland
+            - waybar                     # Customizable Wayland status bar
+            - waylock                    # Screen locker for Wayland
+            - wf-recorder                # Screen recorder for Wayland
+            - wofi                       # Wayland application launcher
+            - xdg-desktop-portal-wlr     # Desktop portal for Wayland (screensharing, etc.)
+
+            # === Fonts / Theming / Qt Integration ===
+            - font-manager
+            - noto-fonts-emoji
+            - ttf-hack-nerd
+            - ttf-jetbrains-mono-nerd
+            - qt5ct                      # Qt5 configuration tool
+            - qt5-wayland                # Wayland support for Qt5 apps
+            - qt6-wayland                # Wayland support for Qt6 apps
+
+            # === GPU / Multimedia Tools ===
+            - obs-studio                 # Video recording/streaming
+            - speedcrunch                # calculator
+            - spotify-launcher
+            - udiskie                    # Automount tool for removable media
+            - vlc
+            - polkit-kde-agent           # Polkit auth agent for KDE
+            - v4l2loopback-dkms          # Virtual V4L2 camera device module
+
+            # === development tools ===
+            - git-delta
+
+        - name: pacman install nvidia packages
+          pacman:
+            name: "{{ item }}"
+          loop:
+            - cuda                       # NVIDIA GPU compute toolkit
+            - nvidia-dkms                # NVIDIA proprietary driver (DKMS)
+            - nvidia-utils
+            - nvidia-container-toolkit
+          when: has_nvidia
+
+        - name: install utilities
+          pacman:
+            name:
+              - cups                       # Printing system
+
+        - name: configure ssh
+          copy:
+            content: |
+              PasswordAuthentication no
+              AuthenticationMethods publickey
+            dest: /etc/ssh/sshd_config.d/20-force_publickey_auth.conf
+
+        - name: disable NetworkManager DNS overwrites
+          copy:
+            content: |
+              [main]
+              dns=none
+            dest: /etc/NetworkManager/NetworkManager.conf
+            owner: root
+            group: root
+            mode: '0644'
+
+        - name: configure dnscrypt-proxy for DoH
+          copy:
+            content: |
+              listen_addresses = [ ]
+              server_names = ['cloudflare', 'google']
+            dest: /etc/dnscrypt-proxy/dnscrypt-proxy.toml
+            owner: root
+            group: root
+            mode: '0644'
+
+        - name: remove all nameserver lines
+          lineinfile:
+            path: /etc/resolv.conf
+            regexp: '^nameserver '
+            state: absent
+
+        - name: update /etc/resolv.conf to use dnscrypt-proxy
+          lineinfile:
+            path: /etc/resolv.conf
+            line: 'nameserver 127.0.0.1'
+            create: true
+
+        - name: enable services
+          block:
+
+            - name: restart NetworkManager
+              systemd_service:
+                name: NetworkManager
+                state: restarted
+
+            - name: enable services
+              systemd_service:
+                name: "{{ item }}"
+                enabled: true
+                state: started
+              loop:
+                - sshd
+                - systemd-timesyncd
+                - bluetooth
+                - cups
+                - dnscrypt-proxy.socket
+
+            - name: enable nvidia services
+              systemd_service:
+                name: "{{ item }}"
+                enabled: true
+              loop:
+                - nvidia-hibernate
+                - nvidia-resume
+                - nvidia-suspend
+              when: has_nvidia
+
+        - name: delete waybar config (will come from dotfiles later)
+          file:
+            path: /etc/xdg/waybar
+            state: absent
+
+        - name: ensure /boot/loader directory exists
+          file:
+            path: "/boot/loader/entries"
+            state: directory
+
+        - name: create boot loader config
+          copy:
+            content: |
+              default arch.conf
+              timeout 5
+              console-mode max
+              editor no
+            dest: /boot/loader/loader.conf
+
+        - name: get root partition device
+          shell: df -h | grep '[[:space:]]/$' | cut -d ' ' -f1
+          register: root_device
+          changed_when: false
+
+        - set_fact:
+            root_device: '{{ root_device.stdout }}'
+
+        - name: set part_uuid variable
+          shell: "blkid | grep {{ root_device }} | grep -oP 'PARTUUID=\"\\K[^\"]+'"
+          register: part_uuid
+          changed_when: false
+
+        - set_fact:
+            part_uuid: '{{ part_uuid.stdout }}'
+
+        - name: create boot loader entries
+          copy:
+            content: |
+              title   Arch Linux
+              linux   /vmlinuz-linux
+              initrd  /intel-ucode.img
+              initrd  {{ item.imageName }}
+              options options root=PARTUUID={{ part_uuid }} zswap.enabled=0 rw rootfstype=ext4{{ ' nvidia-drm.modeset=1' if has_nvidia else '' }}
+            dest: /boot/loader/entries/{{ item.fileName }}
+          loop:
+            - { imageName: "/initramfs-linux.img", fileName: "arch.conf"}
+            - { imageName: "/initramfs-linux-fallback.img", fileName: "arch-fallback.conf"}
+
+        - name: configure ramdisk
+          copy:
+            content: |
+              MODULES=({{ 'nvidia nvidia_modeset nvidia_uvm nvidia_drm' if has_nvidia else '' }})
+              BINARIES=()
+              FILES=()
+              HOOKS=(base udev autodetect keyboard keymap modconf block filesystems fsck)
+            dest: /etc/mkinitcpio.conf
+
+        - name: create ramdisk
+          command: mkinitcpio --config /etc/mkinitcpio.conf --generate /boot/initramfs-linux.img
+
+        - name: nvidia config
+          when: has_nvidia
+          block:
+
+            - name: configure modprobe
+              copy:
+                content: |
+                  options nvidia-drm modeset=1
+                  options nvidia NVreg_PreserveVideoMemoryAllocations=1
+                dest: /etc/modprobe.d/nvidia.conf
+
+            - name: configure nvidia udev rule
+              copy:
+                content: 'ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ATTR{class}=="0x030000", ATTR{power/control}="auto"'
+                dest: /etc/udev/rules.d/99-nvidia.rules
+
+        - name: ignore lid closing (handled by hyprland)
+          lineinfile:
+            path: /etc/systemd/logind.conf
+            regexp: '^(.*)HandleLidSwitch='
+            line: "HandleLidSwitch=ignore"
+
+        - name: set java sdk
+          command: archlinux-java set java-23-openjdk
+
+        - name: grant wheel group sudo
+          copy:
+            content: "%wheel ALL=(ALL) NOPASSWD: ALL\n"
+            dest: "/etc/sudoers.d/wheel"
+
+        - name: check if user exists
+          command: id -u {{ user }}
+          register: user_id
+          failed_when: false
+          changed_when: false
+          when: user|length > 0
+
+        - name: create user
+          user:
+            append: true
+            groups:
+              - docker
+              - input
+              - wheel
+            name: "{{ user }}"
+            password: "{{ user_password }}"
+            shell: /usr/bin/zsh
+          when: user|length > 0 and user_id.rc != 0
+
+    - name: set user variable to current user if no user given
+      set_fact:
+        user: "{{ ansible_user_id }}"
+      when: user|length == 0 and ansible_user_id != 'root'
+
+    - name: user specific
+      when: user|length != 0
+      block:
 
         - name: create xdg dirs
           file:
             path: "{{ item }}"
             state: directory
           loop:
-            -  "/home/{{ user }}/desktop"
-            -  "/home/{{ user }}/downloads"
-            -  "/home/{{ user }}/templates"
-            -  "/home/{{ user }}/public"
-            -  "/home/{{ user }}/media/documents"
-            -  "/home/{{ user }}/media/music"
-            -  "/home/{{ user }}/media/pictures"
-            -  "/home/{{ user }}/media/videos"
+            - "/home/{{ user }}/desktop"
+            - "/home/{{ user }}/downloads"
+            - "/home/{{ user }}/media/documents"
+            - "/home/{{ user }}/media/music"
+            - "/home/{{ user }}/media/pictures"
+            - "/home/{{ user }}/media/videos"
+            - "/home/{{ user }}/public"
+            - "/home/{{ user }}/screenshots"
+            - "/home/{{ user }}/templates"
+
+        - name: create containers dirs
+          file:
+            path: "{{ item }}"
+            state: directory
+            owner: "{{ user }}"
+            group: "{{ user }}"
+          loop:
+            - "/home/{{ user }}/.config/containers/ungoogled-chrome"
+            - "/home/{{ user }}/.config/containers/firefox"
+
+        - name: configure rust
+          command: rustup default stable
+          args:
+            chdir: "/home/{{ user }}"
+          environment:
+            HOME: "/home/{{ user }}"
 
         - name: check if dotfiles are downloaded
           stat: "path=/home/{{ user }}/.dotfiles"
@@ -234,16 +446,18 @@
         - name: clone dotfiles
           when: not dotfiles.stat.exists
           git:
-            repo: https://github.com/LowEntropyEntity/dotfiles.git
+            repo: https://github.com/LowEntropyEntity/.dotfiles.git
             dest: "/home/{{ user }}/.dotfiles/"
             bare: yes
+          register: dotfiles_clone
 
         - name: set dotfiles push remote
           git_config:
             name: remote.origin.pushurl
-            value: git@github.com:LowEntropyEntity/dotfiles.git
+            value: git@github.com:LowEntropyEntity/.dotfiles.git
             repo: "/home/{{ user }}/.dotfiles"
             scope: local
+          when: dotfiles_clone is changed or dotfiles.stat.exists
 
         - name: configure dotfiles to not show untracked files
           git_config:
@@ -257,49 +471,209 @@
           args:
             chdir: "/home/{{ user }}/.dotfiles"
           register: debug
+          when: dotfiles_clone is changed or not dotfiles.stat.exists
+
         - debug:
             msg: "{{ debug.stdout }}"
+          when: dotfiles_clone is changed or not dotfiles.stat.exists
 
         - name: import gpg key
           command: gpg --locate-key sean@sean.xyz
+          args:
+            chdir: "/home/{{ user }}"
+          register: gpg_key_check
+          changed_when: false
 
         - name: trust gpg key
           shell: echo "1F86464D595F2DCD5F6029B6E81D523E5DD412E2:6:" | gpg --import-ownertrust
+          when: "'1F86464D595F2DCD5F6029B6E81D523E5DD412E2' not in gpg_key_check.stdout"
 
         - name: sync submodules
           shell: "git --git-dir=/home/{{ user }}/.dotfiles/ --work-tree=/home/{{ user }} submodule update --init"
           args:
             chdir: "/home/{{ user }}/.dotfiles"
           register: debug
+
         - debug:
             msg: "{{ debug.stdout }}"
 
         - name: list aur packages
           find:
-            paths: "/home/{{ user }}/.src/aur.archlinux.org/"
+            paths: "/home/{{ user }}/.src/aur.archlinux.org"
             file_type: directory
           register: aur_directories
+
         - set_fact:
             aur_directories: "{{ aur_directories.files }}"
 
         - name: build aur packages
-          command: makepkg -si --noconfirm
+          command: makepkg -sirc --noconfirm
           args:
             chdir: "{{ item.path }}"
-          with_items: "{{ aur_directories }}"
+          loop: "{{ aur_directories }}"
+          when: aur_directories|length > 0
 
-        - name: associate gpg private key with yubikey if plugged in
-          command: gpg --card-status
-          ignore_errors: yes
+        - name: install aur packages with yay
+          command: yay -S --needed --noconfirm {{ item }}
+          ignore_errors: true
+          loop:
+            - swaylock-effects
+            - swww
+
+            # ai
+            - chatgpt-shell-cli
+            - jan-bin
+            - python-huggingface-hub
+            - grimblast-git
+
+            # privacy / security
+            - keybase-bin
+            - proton-vpn-gtk-app
+
+            # collaboration
+            - slack-desktop
+            - zoom
+
+            # development
+            - android-studio
+            - aws-cli-v2
+            # this is failing: flutter
+            - postman-bin
+            - visual-studio-code-bin
+          register: yay_install_results
+          retries: 2
+          delay: 5
+          until: yay_install_results.rc == 0
+
+        - name: show yay installation failures
+          debug:
+            msg: "Failed to install {{ item.item }}: {{ item.stderr }}"
+          loop: "{{ yay_install_results.results }}"
+          when: item.rc != 0
+
+        - name: check if cmdline-tools destination file exists
+          stat:
+            path: /home/{{ user }}/android-sdk/cmdline-tools/latest
+          register: cmdlinetools_destination
+
+        - name: create android studio cmdline-tools directory
+          file:
+            path: "/home/{{ user }}/android-sdk/cmdline-tools/latest"
+            state: directory
+
+        - name: install android cmdline-tools
+          unarchive:
+            src: "https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip"
+            dest: /tmp
+            remote_src: yes
+          when: not cmdlinetools_destination.stat.exists
+
+        - name: move android cmdline-tools to proper location
+          shell: "mv /tmp/cmdline-tools/* /home/{{ user }}/android-sdk/cmdline-tools/latest"
+          when: not cmdlinetools_destination.stat.exists
+
+        - name: install android tools
+          shell: "echo y | /home/{{ user }}/android-sdk/cmdline-tools/latest/bin/sdkmanager '{{ item }}'"
+          loop:
+            - "emulator"
+            - "platform-tools"
+            - "tools"
+            - "build-tools;36.0.0-rc3"
+            - "platforms;android-35"
+            - "sources;android-35"
+            - "extras;android;m2repository"
+            - "extras;google;m2repository"
+            - "extras;google;webdriver"
+            - "--licenses"
+          register: sdkmanager_result
+          retries: 2
+          delay: 5
+          until: sdkmanager_result.rc == 0
+
+        # - name: point flutter to android-sdk
+        #   command: "flutter config --android-sdk /home/{{ user }}/android-sdk"
+        #   args:
+        #     chdir: "/home/{{ user }}"
+        #   environment:
+        #     HOME: "/home/{{ user }}"
+        #   changed_when: false
 
       become: true
       become_user: "{{ user }}"
+
+    - name: disable docker for system
+      systemd_service:
+        name: "{{ item }}"
+        enabled: false
+        state: stopped
+      loop:
+        - "docker.service"
+        - "docker.socket"
+
+    # https://docs.docker.com/engine/security/rootless/
+    - name: configure sysctl for docker rootless
+      copy:
+        content: |
+          kernel.unprivileged_userns_clone=1
+        dest: /etc/sysctl.d/99-docker-rootless.conf
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: restart sysctl
+      command: sysctl --system
+
+    - name: enable systemd linger
+      command: "loginctl enable-linger {{ user }}"
+
+    - name: get user id
+      command: "id -u {{ user }}"
+      register: user_id
+      changed_when: false
+
+    - set_fact:
+        user_uid: '{{ user_id.stdout }}'
+
+    - name: install docker rootless
+      shell: curl -fsSL https://get.docker.com/rootless | sh
+      environment:
+        HOME: "/home/{{ user }}"
+        XDG_RUNTIME_DIR: "/run/user/{{ user_uid }}"
+      become: true
+      become_user: "{{ user }}"
+      register: rootless
+
+    - name: docker rootless install stdout
+      debug:
+        msg: "{{ rootless.stdout }}"
+
+    - name: docker rootless install stderr
+      debug:
+        msg: "{{ rootless.stderr }}"
+
+    # https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html
+    - name: nvidia config
+      when: has_nvidia
+      block:
+
+        - name: configure container runtime
+          command: "nvidia-ctk runtime configure --runtime=docker --config=/home/{{ user }}/.config/docker/daemon.json"
+          become: true
+          become_user: "{{ user }}"
+
+        - name: restart docker after configuring container runtime
+          systemd_service:
+            name: docker
+            state: restarted
+            scope: user
+          become: true
+          become_user: "{{ user }}"
+
+        - name: run nvidia-ctk
+          command: nvidia-ctk config --set nvidia-container-cli.no-cgroups --in-place
 
     - name: disable root
       user:
         name: root
         password: "!"
-
-    - name: reboot
-      reboot:
-
+      when: ansible_user_id == 'root'
