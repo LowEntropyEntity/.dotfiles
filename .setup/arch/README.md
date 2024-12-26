@@ -49,7 +49,8 @@ This should install a base Arch system, apply the configuration, and set up the 
 
 2. **Download the ansible playbook**
    ```bash
-   curl https://raw.githubusercontent.com/LowEntropyEntity/.dotfiles/main/.setup/arch/Makefile > Makefile
+   export DOTFILES_BRANCH=main
+   curl https://raw.githubusercontent.com/LowEntropyEntity/.dotfiles/refs/heads/${DOTFILES_BRANCH:-main}/.setup/arch/Makefile > Makefile
    ```
 
 3. **Run `make`**

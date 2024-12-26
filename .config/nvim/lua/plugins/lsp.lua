@@ -57,7 +57,7 @@ return {
 				},
 				ensure_installed = {
 					'rust_analyzer',
-					'tsserver'
+					'ts_ls'
 				}
 			})
 		end,

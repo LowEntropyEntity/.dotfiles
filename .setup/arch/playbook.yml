@@ -42,6 +42,13 @@
               - not (ansible_user_id == 'root' and user|length == 0)
             fail_msg: "must specify a user when running as root"
 
+        - name: disable NetworkManager DNS overwrites
+          copy:
+            content: |
+              [main]
+              dns=none
+            dest: /etc/NetworkManager/NetworkManager.conf
+
         - name: pacman update
           pacman:
             update_cache: true
@@ -59,12 +66,13 @@
           loop:
             - archiso                    # create an arch linux ISO
             - base-devel                 # Core Arch build environment (makepkg, gcc, etc.)
+            - less
             - linux-headers
             - linux-lts-headers
             - man-db                     # Man pages database
             - networkmanager
             - openssh                    # SSH client/server
-            - less
+            - sof-firmware
             - tmux
             - unzip
             - usbutils
@@ -98,6 +106,7 @@
             - bind                       # DNS tools (e.g. `dig`)
             - dnscrypt-proxy             # DNS encryption (DoH/DoT)
             - ccid                       # Smart card CCID driver
+            - network-manager-applet
             - pcsclite                   # Daemon to communicate with smartcards
             - hopenpgp-tools             # Additional PGP utilities
             - yubikey-manager            # Manage YubiKeys
@@ -140,6 +149,7 @@
           loop:
             - mako                       # Wayland notification daemon
             - usbip                      # USB over IP utility
+            - sddm                       # Display manager
             - wl-clipboard               # Wayland clipboard utilities
 
         - name: pacman install development packages
@@ -182,7 +192,7 @@
             - waylock                    # Screen locker for Wayland
             - wf-recorder                # Screen recorder for Wayland
             - wofi                       # Wayland application launcher
-            - xdg-desktop-portal-wlr     # Desktop portal for Wayland (screensharing, etc.)
+            - xdg-desktop-portal-hyprland
 
             # === Fonts / Theming / Qt Integration ===
             - font-manager
@@ -215,7 +225,7 @@
             - nvidia-container-toolkit
           when: has_nvidia
 
-        - name: install utilities
+        - name: pacman install utilities
           pacman:
             name:
               - cups                       # Printing system
@@ -227,37 +237,18 @@
               AuthenticationMethods publickey
             dest: /etc/ssh/sshd_config.d/20-force_publickey_auth.conf
 
-        - name: disable NetworkManager DNS overwrites
-          copy:
-            content: |
-              [main]
-              dns=none
-            dest: /etc/NetworkManager/NetworkManager.conf
-            owner: root
-            group: root
-            mode: '0644'
-
         - name: configure dnscrypt-proxy for DoH
+          lineinfile:
+            path: /etc/dnscrypt-proxy/dnscrypt-proxy.toml
+            regexp: "# server_names ="
+            line: "server_names = ['google', 'cloudflare', 'google-ipv6', 'cloudflare-ipv6']"
+
+        - name: update /etc/resolv.conf
           copy:
             content: |
-              listen_addresses = [ ]
-              server_names = ['cloudflare', 'google']
-            dest: /etc/dnscrypt-proxy/dnscrypt-proxy.toml
-            owner: root
-            group: root
-            mode: '0644'
-
-        - name: remove all nameserver lines
-          lineinfile:
-            path: /etc/resolv.conf
-            regexp: '^nameserver '
-            state: absent
-
-        - name: update /etc/resolv.conf to use dnscrypt-proxy
-          lineinfile:
-            path: /etc/resolv.conf
-            line: 'nameserver 127.0.0.1'
-            create: true
+              nameserver 127.0.0.1
+              options edns0
+            dest: /etc/resolv.conf
 
         - name: enable services
           block:
@@ -273,11 +264,11 @@
                 enabled: true
                 state: started
               loop:
-                - sshd
-                - systemd-timesyncd
                 - bluetooth
                 - cups
-                - dnscrypt-proxy.socket
+                - dnscrypt-proxy
+                - sshd
+                - systemd-timesyncd
 
             - name: enable nvidia services
               systemd_service:
@@ -289,10 +280,13 @@
                 - nvidia-suspend
               when: has_nvidia
 
-        - name: delete waybar config (will come from dotfiles later)
-          file:
-            path: /etc/xdg/waybar
-            state: absent
+        - name: configure automatic login
+          copy:
+            content: |
+              [Autologin]
+              User={{ user }}
+              Session=hyprland-uwsm.desktop
+            dest: /etc/sddm.conf.d/autologin.conf
 
         - name: ensure /boot/loader directory exists
           file:
@@ -374,6 +368,25 @@
         - name: set java sdk
           command: archlinux-java set java-23-openjdk
 
+        - name: disable docker for system
+          systemd_service:
+            name: "{{ item }}"
+            enabled: false
+            state: stopped
+          loop:
+            - "docker.service"
+            - "docker.socket"
+
+        # https://docs.docker.com/engine/security/rootless/
+        - name: configure sysctl for docker rootless
+          copy:
+            content: |
+              kernel.unprivileged_userns_clone=1
+            dest: /etc/sysctl.d/99-docker-rootless.conf
+
+        - name: restart sysctl
+          command: sysctl --system
+
         - name: grant wheel group sudo
           copy:
             content: "%wheel ALL=(ALL) NOPASSWD: ALL\n"
@@ -397,6 +410,9 @@
             password: "{{ user_password }}"
             shell: /usr/bin/zsh
           when: user|length > 0 and user_id.rc != 0
+
+        - name: enable systemd linger
+          command: "loginctl enable-linger {{ user }}"
 
     - name: set user variable to current user if no user given
       set_fact:
@@ -467,7 +483,9 @@
             scope: local
 
         - name: checkout dotfiles
-          shell: "git --git-dir=/home/{{ user }}/.dotfiles/ --work-tree=/home/{{ user }} checkout -f"
+          shell: >
+            git --git-dir=/home/{{ user }}/.dotfiles/ --work-tree=/home/{{ user }}
+            checkout -f "{{ lookup('env','DOTFILES_BRANCH') | default('main') }}"
           args:
             chdir: "/home/{{ user }}/.dotfiles"
           register: debug
@@ -506,6 +524,12 @@
         - set_fact:
             aur_directories: "{{ aur_directories.files }}"
 
+        - name: pring aur directories
+          debug:
+            msg: "{{ item.path }}"
+          loop: "{{ aur_directories }}"
+          when: aur_directories|length > 0
+
         - name: build aur packages
           command: makepkg -sirc --noconfirm
           args:
@@ -517,6 +541,8 @@
           command: yay -S --needed --noconfirm {{ item }}
           ignore_errors: true
           loop:
+            - hyprpolkitagent
+            - uwsm
             - swaylock-effects
             - swww
 
@@ -590,6 +616,36 @@
           delay: 5
           until: sdkmanager_result.rc == 0
 
+        - name: get user id
+          command: "id -u"
+          register: user_id
+          changed_when: false
+
+        - set_fact:
+            user_uid: '{{ user_id.stdout }}'
+
+        - name: check if docker rootless is installed
+          stat: "path=/home/{{ user }}/bin/dockerd"
+          register: rootless_install
+
+        - name: install docker rootless
+          shell: curl -fsSL https://get.docker.com/rootless | sh
+          environment:
+            HOME: "/home/{{ user }}"
+            XDG_RUNTIME_DIR: "/run/user/{{ user_uid }}"
+          register: rootless
+          when: not rootless_install.stat.exists
+
+        - name: docker rootless install stdout
+          debug:
+            msg: "{{ rootless.stdout }}"
+          when: not rootless_install.stat.exists
+
+        - name: docker rootless install stderr
+          debug:
+            msg: "{{ rootless.stderr }}"
+          when: not rootless_install.stat.exists
+
         # - name: point flutter to android-sdk
         #   command: "flutter config --android-sdk /home/{{ user }}/android-sdk"
         #   args:
@@ -598,82 +654,35 @@
         #     HOME: "/home/{{ user }}"
         #   changed_when: false
 
+        # https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html
+        - name: nvidia config
+          when: has_nvidia
+          block:
+
+            - name: configure container runtime
+              command: "nvidia-ctk runtime configure --runtime=docker --config=/home/{{ user }}/.config/docker/daemon.json"
+
+            - name: restart docker after configuring container runtime
+              systemd_service:
+                name: docker
+                state: restarted
+                scope: user
+
       become: true
       become_user: "{{ user }}"
 
-    - name: disable docker for system
-      systemd_service:
-        name: "{{ item }}"
-        enabled: false
-        state: stopped
-      loop:
-        - "docker.service"
-        - "docker.socket"
-
-    # https://docs.docker.com/engine/security/rootless/
-    - name: configure sysctl for docker rootless
-      copy:
-        content: |
-          kernel.unprivileged_userns_clone=1
-        dest: /etc/sysctl.d/99-docker-rootless.conf
-        owner: root
-        group: root
-        mode: '0644'
-
-    - name: restart sysctl
-      command: sysctl --system
-
-    - name: enable systemd linger
-      command: "loginctl enable-linger {{ user }}"
-
-    - name: get user id
-      command: "id -u {{ user }}"
-      register: user_id
-      changed_when: false
-
-    - set_fact:
-        user_uid: '{{ user_id.stdout }}'
-
-    - name: install docker rootless
-      shell: curl -fsSL https://get.docker.com/rootless | sh
-      environment:
-        HOME: "/home/{{ user }}"
-        XDG_RUNTIME_DIR: "/run/user/{{ user_uid }}"
-      become: true
-      become_user: "{{ user }}"
-      register: rootless
-
-    - name: docker rootless install stdout
-      debug:
-        msg: "{{ rootless.stdout }}"
-
-    - name: docker rootless install stderr
-      debug:
-        msg: "{{ rootless.stderr }}"
-
-    # https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html
-    - name: nvidia config
-      when: has_nvidia
-      block:
-
-        - name: configure container runtime
-          command: "nvidia-ctk runtime configure --runtime=docker --config=/home/{{ user }}/.config/docker/daemon.json"
-          become: true
-          become_user: "{{ user }}"
-
-        - name: restart docker after configuring container runtime
-          systemd_service:
-            name: docker
-            state: restarted
-            scope: user
-          become: true
-          become_user: "{{ user }}"
-
-        - name: run nvidia-ctk
-          command: nvidia-ctk config --set nvidia-container-cli.no-cgroups --in-place
+    - name: run nvidia-ctk
+      command: nvidia-ctk config --set nvidia-container-cli.no-cgroups --in-place
+      when: ansible_user_id == 'root'
 
     - name: disable root
       user:
         name: root
         password: "!"
+      when: ansible_user_id == 'root'
+
+    - name: enable sddm
+      systemd_service:
+        name: sddm
+        enabled: true
       when: ansible_user_id == 'root'
