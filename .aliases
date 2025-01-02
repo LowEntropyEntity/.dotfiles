@@ -46,6 +46,9 @@ alias ai='chatgpt'
 ### browsers
 alias chrome="docker exec -it ungoogled-chromium /opt/ungoogledchromium/chrome --ozone-platform=wayland --no-sandbox --new-window"
 
+alias docker-root='export DOCKER_HOST=$DOCKER_HOST_ROOT'
+alias docker-rootless='export DOCKER_HOST=$DOCKER_HOST_ROOTLESS'
+
 ### shell history/stealth
 alias stealth='set +o history'
 alias .stealth='set -o history'
@@ -93,7 +96,7 @@ elif command -v vi &>/dev/null; then
 fi
 
 ### vpn
-alias vpn-sonos='sudo openconnect corp-vpn.sonos.com -u sean.simonsen --useragent=AnyConnect'
+alias vpn-$EMPLOYER_NAME='sudo openconnect corp-vpn.$EMPLOYER_DOMAIN -u $EMPLOYER_USERNAME --useragent=AnyConnect'
 
 ### zsh reload
 alias zshrc='omz reload'
