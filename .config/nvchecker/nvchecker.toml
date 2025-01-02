@@ -1,0 +1,12 @@
+[__config__]
+oldver = "old_ver.json"
+newver = "new_ver.json"
+
+[git-crypt]
+source = "github"
+github = "AGWA/git-crypt"
+
+[devcontainers-cli]
+source = "github"
+github = "devcontainers/cli"
+

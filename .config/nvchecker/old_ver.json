@@ -1,0 +1,15 @@
+{
+  "version": 2,
+  "data": {
+    "devcontainers-cli": {
+      "version": "20241219.181949",
+      "revision": "e0598db3bf9f7ea88a752366e689c6c884751cd9",
+      "url": "https://github.com/devcontainers/cli/commit/e0598db3bf9f7ea88a752366e689c6c884751cd9"
+    },
+    "git-crypt": {
+      "version": "20240903.233058",
+      "revision": "968c924798deb4295299897ff3a5fc5cfd31e716",
+      "url": "https://github.com/AGWA/git-crypt/commit/968c924798deb4295299897ff3a5fc5cfd31e716"
+    }
+  }
+}

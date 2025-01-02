@@ -11,14 +11,22 @@ if command -v bat &>/dev/null; then
 fi
 if command -v eza &>/dev/null; then
 	alias l='eza -1 --classify'
+	alias lr='eza -1 -R --classify'
 	alias la='eza -1 -a --classify'
+	alias lar='eza -1 -a -R --classify'
 	alias ll='eza -l --classify'
+	alias llr='eza -l -R --classify'
 	alias lla='eza -l -a --classify'
+	alias llar='eza -l -a -R --classify'
 else
 	alias l='ls -1FG'
+	alias lr='ls -1FGR'
 	alias la='ls -1AFG'
+	alias lar='ls -1AFGR'
 	alias ll='ls -lFG'
+	alias llr='ls -lFGR'
 	alias lla='ls -lAFG'
+	alias llar='ls -lAFGR'
 fi
 alias findfile='find . | grep' # find file by name
 
@@ -46,6 +54,9 @@ alias ai='chatgpt'
 ### browsers
 alias chrome="docker exec -it ungoogled-chromium /opt/ungoogledchromium/chrome --ozone-platform=wayland --no-sandbox --new-window"
 
+alias docker-root='export DOCKER_HOST=$DOCKER_HOST_ROOT'
+alias docker-rootless='export DOCKER_HOST=$DOCKER_HOST_ROOTLESS'
+
 ### shell history/stealth
 alias stealth='set +o history'
 alias .stealth='set -o history'
@@ -62,6 +73,8 @@ alias .tar.gz='.tar'
 alias .tar.xz='.tar'
 alias .gz='gzip -d'
 alias .tgz='tar -xvf'
+alias .tar.zst='tar --zstd -xvf'
+alias lstar='tar -tf'
 
 ### temporary dirs and files
 alias tmp='cd $(mktemp -d)'
@@ -84,16 +97,15 @@ alias redis='docker run --rm -p 6379:6379 redis'
 
 ### editor
 if command -v nvim &>/dev/null; then
-	alias vim='nvim'
-	alias vi='nvim'
+	alias v='nvim'
 elif command -v vim &>/dev/null; then
-	alias vi='vim'
+	alias v='vim'
 elif command -v vi &>/dev/null; then
-	alias vim='vi'
+	alias v='vi'
 fi
 
 ### vpn
-alias vpn-sonos='sudo openconnect corp-vpn.sonos.com -u sean.simonsen --useragent=AnyConnect'
+alias vpn-$EMPLOYER_NAME='sudo openconnect corp-vpn.$EMPLOYER_DOMAIN -u $EMPLOYER_USERNAME --useragent=AnyConnect'
 
 ### zsh reload
 alias zshrc='omz reload'

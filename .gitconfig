@@ -99,8 +99,8 @@
 	name = sean simonsen
 	signingkey = 0xE81D523E5DD412E2
 
-[includeIf "gitdir:~/sonos/"]
-	path = ~/.gitconfig-sonos
+[includeIf "gitdir:~/work/"]
+	path = ~/work/.gitconfig
 
 [safe]
 	directory = /opt/flutter

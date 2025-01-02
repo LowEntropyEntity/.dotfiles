@@ -1,0 +1,26 @@
+pkgname=git-crypt-ignore-untracked-fork-git
+pkgver=r197.c8b6cb5
+pkgrel=1
+pkgdesc='transparent file encryption in git'
+arch=('x86_64')
+url='https://www.agwa.name/projects/git-crypt'
+license=('GPL3')
+depends=('git' 'openssl')
+makedepends=('libxslt' 'docbook-xsl')
+source=("${pkgname%-git}::git+https://github.com/LowEntropyEntity/git-crypt.git")
+sha256sums=('SKIP')
+
+pkgver() {
+	cd "$srcdir/${pkgname%-git}"
+	printf "r%s.%s" "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
+}
+
+build() {
+	cd "$srcdir/${pkgname%-git}"
+	make ENABLE_MAN=yes PREFIX=/usr DOCBOOK_XSL=/usr/share/xml/docbook/xsl-stylesheets-*/manpages/docbook.xsl
+}
+
+package() {
+	cd "$srcdir/${pkgname%-git}"
+	make ENABLE_MAN=yes PREFIX=/usr DESTDIR="$pkgdir" install
+}

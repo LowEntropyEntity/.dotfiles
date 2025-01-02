@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+URL="$1"
+
+if [[ "$URL" == *"$EMPLOYER_NAME"* ]]; then
+	chromium --profile-directory="Profile 1" "$URL"
+else
+	chromium --profile-directory="Default" "$URL"
+fi
+

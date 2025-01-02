@@ -107,6 +107,7 @@
             - dnscrypt-proxy             # DNS encryption (DoH/DoT)
             - ccid                       # Smart card CCID driver
             - network-manager-applet
+            - openconnect
             - pcsclite                   # Daemon to communicate with smartcards
             - hopenpgp-tools             # Additional PGP utilities
             - yubikey-manager            # Manage YubiKeys
@@ -159,6 +160,7 @@
             - clang
             - cmake
             - dart
+            - direnv
             - git
             - git-lfs
             - go
@@ -167,6 +169,8 @@
             - mitmproxy
             - nodejs
             - npm
+            - nvchecker
+            - yarn
 
         - name: pacman install visual packages
           pacman:
@@ -197,6 +201,8 @@
             # === Fonts / Theming / Qt Integration ===
             - font-manager
             - noto-fonts-emoji
+            - ttf-fira-sans
+            - ttf-firacode-nerd
             - ttf-hack-nerd
             - ttf-jetbrains-mono-nerd
             - qt5ct                      # Qt5 configuration tool
@@ -229,6 +235,11 @@
           pacman:
             name:
               - cups                       # Printing system
+
+        # - name: install devcontainers/cli
+        #   npm:
+        #     name: "@devcontainers/cli"
+        #     global: true
 
         - name: configure ssh
           copy:
@@ -280,18 +291,27 @@
                 - nvidia-suspend
               when: has_nvidia
 
+        - name: ensure sddm config directory exists
+          file:
+            path: /etc/sddm.conf.d
+            state: directory
+
         - name: configure automatic login
           copy:
             content: |
               [Autologin]
               User={{ user }}
               Session=hyprland-uwsm.desktop
+              Relogin=true
             dest: /etc/sddm.conf.d/autologin.conf
 
-        - name: ensure /boot/loader directory exists
+        - name: ensure /boot/loader directory exists and is empty
           file:
             path: "/boot/loader/entries"
-            state: directory
+            state: "{{ item }}"
+          loop:
+            - absent
+            - directory
 
         - name: create boot loader config
           copy:
@@ -321,15 +341,31 @@
         - name: create boot loader entries
           copy:
             content: |
-              title   Arch Linux
-              linux   /vmlinuz-linux
+              title   {{ item.title }}
+              linux   {{ item.kernel }}
               initrd  /intel-ucode.img
               initrd  {{ item.imageName }}
               options options root=PARTUUID={{ part_uuid }} zswap.enabled=0 rw rootfstype=ext4{{ ' nvidia-drm.modeset=1' if has_nvidia else '' }}
             dest: /boot/loader/entries/{{ item.fileName }}
           loop:
-            - { imageName: "/initramfs-linux.img", fileName: "arch.conf"}
-            - { imageName: "/initramfs-linux-fallback.img", fileName: "arch-fallback.conf"}
+            - { title: "arch linux", imageName: "/initramfs-linux.img", kernel: "/vmlinuz-linux", fileName: "arch.conf"}
+            - { title: "arch linux (lts)", imageName: "/initramfs-linux-lts.img", kernel: "/vmlinuz-linux-lts", fileName: "arch-lts.conf"}
+            - { title: "arch linux fallback", imageName: "/initramfs-linux-fallback.img", kernel: "/vmlinuz-linux", fileName: "arch-fallback.conf"}
+            - { title: "arch linux (lts) fallback", imageName: "/initramfs-linux-lts-fallback.img", kernel: "/vmlinuz-linux-lts", fileName: "arch-lts-fallback.conf"}
+
+        - name: get boot partition device
+          shell: df -h | grep '[[:space:]]/boot$' | cut -d ' ' -f1
+          register: boot_device
+          changed_when: false
+
+        - set_fact:
+            boot_device: '{{ boot_device.stdout }}'
+
+        - name: add boot to efibootmgr
+          shell: >
+            efibootmgr --create --disk {{ boot_device }} --part 1 \
+            --label "Arch Linux" \
+            --loader "\EFI\systemd\systemd-bootx64.efi"
 
         - name: configure ramdisk
           copy:
@@ -368,14 +404,13 @@
         - name: set java sdk
           command: archlinux-java set java-23-openjdk
 
-        - name: disable docker for system
+        - name: configure system container runtime
+          command: "nvidia-ctk runtime configure --runtime=docker"
+
+        - name: restart system docker
           systemd_service:
-            name: "{{ item }}"
-            enabled: false
-            state: stopped
-          loop:
-            - "docker.service"
-            - "docker.socket"
+            name: docker
+            state: restarted
 
         # https://docs.docker.com/engine/security/rootless/
         - name: configure sysctl for docker rootless
@@ -386,6 +421,19 @@
 
         - name: restart sysctl
           command: sysctl --system
+
+        - name: configure xdg default directories
+          copy:
+            content: |
+              DESKTOP=desktop
+              DOCUMENTS=media/documents
+              DOWNLOAD=downloads
+              MUSIC=media/music
+              PICTURES=media/pictures
+              PUBLICSHARE=public
+              TEMPLATES=templates
+              VIDEOS=media/videos
+            dest: /etc/xdg/user-dirs.defaults
 
         - name: grant wheel group sudo
           copy:
@@ -422,31 +470,6 @@
     - name: user specific
       when: user|length != 0
       block:
-
-        - name: create xdg dirs
-          file:
-            path: "{{ item }}"
-            state: directory
-          loop:
-            - "/home/{{ user }}/desktop"
-            - "/home/{{ user }}/downloads"
-            - "/home/{{ user }}/media/documents"
-            - "/home/{{ user }}/media/music"
-            - "/home/{{ user }}/media/pictures"
-            - "/home/{{ user }}/media/videos"
-            - "/home/{{ user }}/public"
-            - "/home/{{ user }}/screenshots"
-            - "/home/{{ user }}/templates"
-
-        - name: create containers dirs
-          file:
-            path: "{{ item }}"
-            state: directory
-            owner: "{{ user }}"
-            group: "{{ user }}"
-          loop:
-            - "/home/{{ user }}/.config/containers/ungoogled-chrome"
-            - "/home/{{ user }}/.config/containers/firefox"
 
         - name: configure rust
           command: rustup default stable
@@ -615,6 +638,11 @@
           retries: 2
           delay: 5
           until: sdkmanager_result.rc == 0
+
+        - name: install nvm
+          shell: curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
+          environment:
+            HOME: "/home/{{ user }}"
 
         - name: get user id
           command: "id -u"

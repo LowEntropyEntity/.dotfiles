@@ -56,7 +56,7 @@ COMPLETION_WAITING_DOTS="true"
 # "mm/dd/yyyy"|"dd.mm.yyyy"|"yyyy-mm-dd"
 # or set a custom format using the strftime function format specifications,
 # see 'man strftime' for details.
-# HIST_STAMPS="mm/dd/yyyy"
+HIST_STAMPS="yyyy-mm-dd"
 
 # Would you like to use another custom folder than $ZSH/custom?
 # ZSH_CUSTOM=/path/to/new-custom-folder
@@ -66,7 +66,7 @@ COMPLETION_WAITING_DOTS="true"
 # Custom plugins may be added to $ZSH_CUSTOM/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(git)
+plugins=(git direnv)
 
 source $ZSH/oh-my-zsh.sh
 
@@ -89,7 +89,9 @@ export ARCHFLAGS="-arch x86_64"
 
 export PATH="$HOME/bin:$PATH"
 export PATH="$HOME/android-sdk/cmdline-tools/latest/bin:$PATH"
-export DOCKER_HOST=unix://$XDG_RUNTIME_DIR/docker.sock
+export DOCKER_HOST_ROOT=unix:///var/run/docker.sock
+export DOCKER_HOST_ROOTLESS=unix://$XDG_RUNTIME_DIR/docker.sock
+export DOCKER_HOST=$DOCKER_HOST_ROOT
 
 # if [ -x "$(command -v tmux)" ] && [ -n "${DISPLAY}" ] && [ -z "${TMUX}" ]; then
 # 	exec tmux >/dev/null 2>&1
@@ -128,4 +130,24 @@ fi
 if [ ! -d ~/src ]; then
 	echo 'src not found, run: git clone git@github.com:LowEntropyEntity/src.git --recursive ~/src\n'
 fi
+
+# xdg-mime default smart-open-chromium.desktop x-scheme-handler/http
+# xdg-mime default smart-open-chromium.desktop x-scheme-handler/https
+
+export NVM_DIR="$HOME/.config/nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+
+nvchecker_updates() {
+	local output
+	output=$(script -qfc "nvchecker" /dev/null 2>/dev/null)
+
+	if [[ -n "$output" ]]; then
+		echo -e "\e[1;35mnvchecker:\e[0m"
+		echo "$output"
+		echo -e "\n** run \e[96mnvtake [NAME ...]\e[0m or \e[96mnvtake --all\e[0m to acknowledge **"
+	fi
+}
+
+nvchecker_updates
 

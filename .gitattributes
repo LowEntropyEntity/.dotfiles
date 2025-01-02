@@ -1,0 +1,2 @@
+.env-private filter=git-crypt diff=git-crypt
+work/** filter=git-crypt diff=git-crypt
