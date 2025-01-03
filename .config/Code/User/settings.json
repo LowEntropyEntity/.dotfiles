@@ -20,5 +20,10 @@
 	},
 	"editor.minimap.enabled": false,
 	"aws.telemetry": false,
-	"editor.fontFamily": "FiraCode Nerd Font Mono"
+	"editor.fontFamily": "FiraCode Nerd Font Mono",
+	"dev.containers.defaultExtensions": [
+		"eamodio.gitlens",
+		"github.copilot",
+		"streetsidesoftware.code-spell-checker"
+	]
 }
