@@ -479,22 +479,22 @@
             HOME: "/home/{{ user }}"
 
         - name: check if dotfiles are downloaded
-          stat: "path=/home/{{ user }}/.dotfiles"
+          stat: "path=/home/{{ user }}/.git"
           register: dotfiles
 
-        - name: clone dotfiles
+        - name: fetch dotfiles
           when: not dotfiles.stat.exists
           git:
             repo: https://github.com/LowEntropyEntity/.dotfiles.git
-            dest: "/home/{{ user }}/.dotfiles/"
-            bare: yes
+            dest: "/home/{{ user }}/"
+            clone: "no"
           register: dotfiles_clone
 
         - name: set dotfiles push remote
           git_config:
             name: remote.origin.pushurl
             value: git@github.com:LowEntropyEntity/.dotfiles.git
-            repo: "/home/{{ user }}/.dotfiles"
+            repo: "/home/{{ user }}"
             scope: local
           when: dotfiles_clone is changed or dotfiles.stat.exists
 
@@ -502,21 +502,15 @@
           git_config:
             name: status.showUntrackedFiles
             value: "no"
-            repo: "/home/{{ user }}/.dotfiles"
+            repo: "/home/{{ user }}"
             scope: local
 
-        - name: checkout dotfiles
-          shell: >
-            git --git-dir=/home/{{ user }}/.dotfiles/ --work-tree=/home/{{ user }}
-            checkout -f "{{ lookup('env','DOTFILES_BRANCH') | default('main') }}"
-          args:
-            chdir: "/home/{{ user }}/.dotfiles"
-          register: debug
-          when: dotfiles_clone is changed or not dotfiles.stat.exists
-
-        - debug:
-            msg: "{{ debug.stdout }}"
-          when: dotfiles_clone is changed or not dotfiles.stat.exists
+        - name: checkout dotfiles branch
+          when: dotfiles_clone is changed or dotfiles.stat.exists
+          git:
+            repo: "/home/{{ user }}"
+            version: "{{ lookup('env','DOTFILES_BRANCH') | default('main') }}"
+            force: true
 
         - name: import gpg key
           command: gpg --locate-key sean@sean.xyz
@@ -530,9 +524,9 @@
           when: "'1F86464D595F2DCD5F6029B6E81D523E5DD412E2' not in gpg_key_check.stdout"
 
         - name: sync submodules
-          shell: "git --git-dir=/home/{{ user }}/.dotfiles/ --work-tree=/home/{{ user }} submodule update --init"
+          shell: "git submodule update --init"
           args:
-            chdir: "/home/{{ user }}/.dotfiles"
+            chdir: "/home/{{ user }}"
           register: debug
 
         - debug:
