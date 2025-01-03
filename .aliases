@@ -66,14 +66,16 @@ alias sudo='sudo '
 
 ### compression and archives
 alias gz='gzip'
-alias tar.gz='tar-gz'
+alias tar.gz='tar -czvf'
 alias tgz='tar -cvzf'
-alias .tar='tar -xvf'
-alias .tar.gz='.tar'
-alias .tar.xz='.tar'
 alias .gz='gzip -d'
-alias .tgz='tar -xvf'
+alias .tar='tar -xvf'
+alias .tar.bz2='tar -xvjf'
+alias .tar.gz='tar -xvf'
+alias .tar.xz='tar -xvf'
 alias .tar.zst='tar --zstd -xvf'
+alias .tgz='tar -xvf'
+alias .zip='unzip'
 alias lstar='tar -tf'
 
 ### temporary dirs and files

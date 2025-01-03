@@ -16,9 +16,13 @@ keymap.set('n', '<C-l>', '<C-w>l', opts) -- navigate right
 -- window management
 keymap.set('n', '<leader>sv', ':vsplit<CR>', opts) -- split vertically
 keymap.set('n', '<leader>sh', ':split<CR>', opts) -- split horizontally
+keymap.set('n', '<leader>s|', ':vsplit<CR>', opts) -- split vertically
+keymap.set('n', '<leader>s-', ':split<CR>', opts) -- split horizontally
 
--- whitespace
+-- toggle show whitespace
 keymap.set('n', '<leader>ws', ':set nolist!<CR>', opts)
+
+-- toggle relative / absolute line numbers
 keymap.set('n', '<leader>ln', ':set nornu!<CR>', opts)
 
 -- transparency
@@ -57,7 +61,7 @@ keymap.set('n', '<C-d>', '<C-d>zz')
 keymap.set('n', '<C-u>', '<C-u>zz')
 
 -- paste without saving overwritten text in the paste buffer
-keymap.set('x', '<leader>p', '\"_dP')
+keymap.set('x', '<leader>p', [["_dP]])
 
 -- sed current selection
 keymap.set("n", "<leader>s", [[:%s/\<<C-r><C-w>\>//gI<Left><Left><Left>]])

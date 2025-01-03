@@ -19,5 +19,6 @@
 		"editor.defaultFormatter": "vscode.json-language-features"
 	},
 	"editor.minimap.enabled": false,
-	"aws.telemetry": false
+	"aws.telemetry": false,
+	"editor.fontFamily": "FiraCode Nerd Font Mono"
 }
