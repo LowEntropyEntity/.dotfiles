@@ -16,4 +16,4 @@ else
 	config="$CONFIG_NORMAL"
 fi
 
-PATH="$HOME/.local/bin/dotfiles-git:$PATH "exec /usr/bin/gitmux -cfg "$config" "$dir"
+PATH="$HOME/.local/bin/dotfiles-git:$PATH" exec /usr/bin/gitmux -cfg "$config" "$dir"

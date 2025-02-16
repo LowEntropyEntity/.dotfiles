@@ -5,7 +5,6 @@ export ZSH="$HOME/.oh-my-zsh"
 # to know which specific one was loaded, run: echo $RANDOM_THEME
 # See https://github.com/ohmyzsh/ohmyzsh/wiki/Themes
 if [[ -n "$DEV_CONTAINER" ]]; then
-	DISABLE_AUTO_TITLE="true"
 	ZSH_THEME="refined"
 else
 	ZSH_THEME="robbyrussell"
@@ -57,6 +56,10 @@ zstyle ':fzf-tab:*' switch-group '<' '>'
 zstyle ':fzf-tab:*' popup-min-size 60 12
 # only apply to 'diff'
 zstyle ':fzf-tab:complete:diff:*' popup-min-size 80 12
+
+# https://unix.stackexchange.com/questions/350797/zsh-git-filename-completion-with-git-dir-work-tree-not-a-git-repo
+fpath=(~/.zsh $fpath)
+zstyle ':completion:*:*:git:*' script ~/.git-completion.bash
 
 # Uncomment the following line if pasting URLs and other text is messed up.
 # DISABLE_MAGIC_FUNCTIONS="true"

@@ -1,0 +1,9 @@
+Session.vim
+
+*.bak
+*.log
+tmp.*
+
+.git/
+node_modules/
+tmp.*/

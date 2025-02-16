@@ -8,4 +8,4 @@
 	pushurl = git@github.com:LowEntropyEntity/.dotfiles.git
 
 [status]
-	showUntrackedFiles = no
+	showUntrackedFiles = yes
