@@ -6,7 +6,7 @@
 !.bash_profile
 !.git-completion.bash
 !.gitattributes
-!.gitignore
+!.gitignore.dotfiles
 !.gitmodules
 !.sops.yaml
 !.zshrc
@@ -23,6 +23,6 @@
 !.ssh/
 !.tmux/
 !.zsh/
-!ai/
-!containers/
-!work/
+
+Session.vim
+*.cache

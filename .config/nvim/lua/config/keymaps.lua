@@ -25,10 +25,10 @@ keymap.set('n', '<leader>yk', ':set nosplitbelow<cr>:split<cr>:set splitbelow<cr
 keymap.set('n', '<leader>yl', ':vsplit<cr>', { desc = 'windows: clone right' })
 keymap.set('n', '<leader>yj', ':split<cr>', { desc = 'windows: clone down' })
 -- resize windows - ctrl + arrow
-keymap.set('n', '<C-Up>', ':resize +2<cr>', { desc = 'windows: increase height' })
-keymap.set('n', '<C-Down>', ':resize -2<cr>', { desc = 'windows: decrease height' })
-keymap.set('n', '<C-Left>', ':vertical resize -2<cr>', { desc = 'windows: increase width' })
-keymap.set('n', '<C-Right>', ':vertical resize +2<cr>', { desc = 'windows: decrease width' })
+keymap.set('n', '<leader>K', ':resize +2<cr>', { desc = 'windows: increase height' })
+keymap.set('n', '<leader>J', ':resize -2<cr>', { desc = 'windows: decrease height' })
+keymap.set('n', '<leader>L', ':vertical resize -2<cr>', { desc = 'windows: increase width' })
+keymap.set('n', '<leader>H', ':vertical resize +2<cr>', { desc = 'windows: decrease width' })
 
 keymap.set('n', '<leader>uiws', ':set nolist!<cr>', { desc = 'toggle whitespace' })
 

@@ -64,11 +64,8 @@ dev-down() {
 alias dev-ls='docker container ls -a --filter "label=devcontainer.metadata" --format json | fix-docker-container-formatting | filter-docker-devcontainer-output'
 
 ### dotfiles and git
-alias dot-sync='dot pull --rebase --autostash && dot reset -- $HOME && dot ls-files --deleted -z | xargs -0 git --git-dir=$DOTFILES_GIT_DIR --work-tree=$DOTFILES_WORK_TREE checkout && echo "dotfiles synced successfully"'
-if [[ -z "$DEV_CONTAINER" ]]; then
-	alias git='DOTFILES_MODE=1 git'
-	alias lazygit='DOTFILES_MODE=1 lazygit'
-fi
+alias dot='GIT_DIR=$DOTFILES_GIT_DIR GIT_WORK_TREE=$DOTFILES_GIT_WORK_TREE git'
+alias home='DOTFILES_MODE= GIT_DIR=$HOME_GIT_DIR GIT_WORK_TREE=$HOME_GIT_WORK_TREE git'
 
 ### networking
 alias lsports='ss -tulpn'
@@ -136,6 +133,7 @@ alias tmux-restore-off='touch ~/tmux_no_auto_restore'
 alias tmux-restore-on='rm ~/tmux_no_auto_restore 2> /dev/null || true'
 if [[ -n "$TMUX" ]]; then
 	alias cds='cd $(tmux display-message -p "#{session_path}") && dirs -c'
+	alias cdw='cd $(tmux display-message -p "#{?@window_path,#{@window_path},#{session_path}}") && dirs -c'
 	alias ss='tmux choose-tree -Zs'
 	sn() {
 		name="$@"

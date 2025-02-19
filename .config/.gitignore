@@ -13,6 +13,7 @@
 !eza/
 !fzf/
 !git/
+!gnupg/
 !hypr/
 !lazygit/
 !mako/
@@ -22,10 +23,7 @@
 !rustfmt/
 !swaylock/
 !tmux/
-!user-dirs.dirs/
 !user-dirs.locale/
 !uwsm/
 !waybar/
 !wofi/
-
-Session.vim

@@ -21,7 +21,7 @@ program = "/usr/bin/tmux"
 opacity = 0.96
 
 [general]
-import = ["/home/sean/.config/alacritty/catppuccin/catppuccin-mocha.toml"]
+import = ["~/.config/alacritty/catppuccin/catppuccin-mocha.toml"]
 
 [keyboard]
 bindings = [ # https://stackoverflow.com/a/78694090
