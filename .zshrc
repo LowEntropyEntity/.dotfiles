@@ -31,8 +31,11 @@ zstyle ':omz:update' mode auto        # update automatically without asking
 # Uncomment the following line to change how often to auto-update (in days).
 zstyle ':omz:update' frequency 13
 
+# https://unix.stackexchange.com/questions/350797/zsh-git-filename-completion-with-git-dir-work-tree-not-a-git-repo
+fpath=(~/.zsh $fpath)
+zstyle ':completion:*:*:git:*' script ~/.git-completion.bash
+
 # fzf-tab
-zstyle ':fzf-tab:*' fzf-command ftb-tmux-popup
 # disable sort when completing `git checkout`
 zstyle ':completion:*:git-checkout:*' sort false
 # set descriptions format to enable group support
@@ -46,20 +49,15 @@ zstyle ':completion:*' menu no
 zstyle ':fzf-tab:complete:cd:*' fzf-preview 'eza -1 --color=always $realpath'
 # custom fzf flags
 # NOTE: fzf-tab does not follow FZF_DEFAULT_OPTS by default
-zstyle ':fzf-tab:*' fzf-flags --color=fg:1,fg+:2 --bind=tab:accept
+zstyle ':fzf-tab:*' fzf-flags --bind=tab:accept
 # To make fzf-tab follow FZF_DEFAULT_OPTS.
 # NOTE: This may lead to unexpected behavior since some flags break this plugin. See Aloxaf/fzf-tab#455.
 zstyle ':fzf-tab:*' use-fzf-default-opts yes
 # switch group using `<` and `>`
 zstyle ':fzf-tab:*' switch-group '<' '>'
-# apply to all command
-zstyle ':fzf-tab:*' popup-min-size 60 12
-# only apply to 'diff'
-zstyle ':fzf-tab:complete:diff:*' popup-min-size 80 12
-
-# https://unix.stackexchange.com/questions/350797/zsh-git-filename-completion-with-git-dir-work-tree-not-a-git-repo
-fpath=(~/.zsh $fpath)
-zstyle ':completion:*:*:git:*' script ~/.git-completion.bash
+# tmux
+zstyle ':fzf-tab:*' fzf-command ftb-tmux-popup
+zstyle ':fzf-tab:*' popup-min-size 80 12
 
 # Uncomment the following line if pasting URLs and other text is messed up.
 # DISABLE_MAGIC_FUNCTIONS="true"
@@ -100,9 +98,7 @@ ZSH_CUSTOM=~/.oh-my-zsh-custom
 # Custom plugins may be added to $ZSH_CUSTOM/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-if command -v direnv &>/dev/null; then
-	plugins=(git direnv)
-fi
+plugins=(git direnv fzf-tab)
 
 source $ZSH/oh-my-zsh.sh
 
@@ -132,7 +128,7 @@ fi
 if [ ! -f /.dockerenv ]; then
 	export GPG_TTY="$(tty)"
 	export SSH_AUTH_SOCK=$(gpgconf --list-dirs agent-ssh-socket)
-	gpg-connect-agent updatestartuptty /bye > /dev/null
+	gpg-connect-agent -q updatestartuptty /bye > /dev/null
 
 	gpg -K | grep sean@sean.xyz 1>/dev/null 2>&1 || gpg --card-status 1> /dev/null || echo 'private key not found: run gpg --card-status\n'
 

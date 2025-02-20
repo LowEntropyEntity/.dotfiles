@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 TMPDIR=$(mktemp -d)
 TIMESTAMP=$(date -u +"%H:%M:%S.%3N")
@@ -18,7 +18,7 @@ GPG_ENCRYPTION_KEY="$(git config get user.encryptionkey || git config get user.s
 
 case "$OPERATION" in
 	clean)
-		GPG_OPERATION="--encrypt --recipient ${GPG_ENCRYPTION_KEY}"
+		GPG_OPERATION="--encrypt --armor --recipient ${GPG_ENCRYPTION_KEY}"
 		;;
 	smudge)
 		GPG_OPERATION="--decrypt"

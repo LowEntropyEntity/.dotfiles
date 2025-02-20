@@ -141,6 +141,7 @@
             - poppler
             - ripgrep
             - yazi
+            - yq
             - zbar                       # Barcode/QR code scanner CLI tools
             - zoxide
 
@@ -540,33 +541,6 @@
         - name: check if home files are downloaded
           stat: "path={{ user_home_git_dir }}"
           register: home
-
-        - name: clone home
-          when: not home.stat.exists
-          git:
-            repo: https://github.com/LowEntropyEntity/.home.git
-            dest: "{{ user_home_git_dir }}"
-            bare: yes
-          register: home_clone
-
-        - name: checkout home
-          shell: "git checkout -f {{ lookup('env','HOME_GIT_DEFAULT_BRANCH') | default('main', true) }}"
-          environment:
-            GIT_DIR: "{{ lookup('env','HOME_GIT_DIR') | default(user_home_git_dir, true) }}"
-            GIT_WORK_TREE: "{{ lookup('env','HOME_GIT_WORK_TREE') | default(user_home, true) }}"
-          when: home_clone is changed or not home.stat.exists
-
-        - name: config home
-          git_config:
-            name: "includeif.gitdir:~/.home.path"
-            value: "~/.config/git/config.home"
-          environment:
-            GIT_DIR: "{{ lookup('env','HOME_GIT_DIR') | default(user_home_git_dir, true) }}"
-          when: home_clone is changed or not home.stat.exists
-
-        - debug:
-            msg: "{{ debug.stdout }}"
-          when: home_clone is changed or not home.stat.exists
 
         - name: import gpg key
           command: gpg --locate-key sean@sean.xyz

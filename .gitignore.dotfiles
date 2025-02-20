@@ -1,5 +1,4 @@
-/*
-/*/
+*
 
 !.aliases
 !.ansible.cfg
@@ -12,7 +11,7 @@
 !.zshrc
 
 !.config/
-!.gnupg/
+!.dotfiles/hooks/*
 !.inputrc
 !.local/
 !.oh-my-zsh
