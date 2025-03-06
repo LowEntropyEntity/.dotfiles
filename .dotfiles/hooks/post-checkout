@@ -1,7 +1,5 @@
 echo 'running post-checkout hook'
-chmod 700 .local/share/gnupg
+find .local/share/gnupg -type d -exec chmod 700 {} \;
 chmod 600 .local/share/gnupg/*
-chmod 700 .local/share/gnupg/private-keys-v1.d
 chmod 600 .local/share/gnupg/private-keys-v1.d/*
 chmod 600 .ssh/sean_ed25519_yubikey.pub
-

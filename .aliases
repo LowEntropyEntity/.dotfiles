@@ -72,7 +72,7 @@ alias dot='GIT_DIR=$DOTFILES_GIT_DIR GIT_WORK_TREE=$DOTFILES_GIT_WORK_TREE git'
 alias home='DOTFILES_MODE= GIT_DIR=$HOME_GIT_DIR GIT_WORK_TREE=$HOME_GIT_WORK_TREE git'
 
 ### networking
-alias lsports='ss -tulpn'
+alias lsports='\ss -tulpn'
 
 ### datetime
 alias now='date +"%F %T"'

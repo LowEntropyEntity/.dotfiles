@@ -593,6 +593,7 @@
 
             # ai
             - chatgpt-shell-cli
+            - electron30-bin
             - jan-bin
             - python-huggingface-hub
             - grimblast-git
