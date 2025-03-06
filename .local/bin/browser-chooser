@@ -3,12 +3,13 @@ set -euo pipefail
 
 : "${TMPDIR:=/tmp}"
 : "${XDG_STATE_HOME:=$HOME/.local/state}"
+: "${XDG_CACHE_HOME:=$HOME/.cache}"
 : "${DEFAULT_BROWSER:=chromium}"
 BROWSER="$DEFAULT_BROWSER"
 
 function pick_session() {
 	: "${PERSISTENT_DIRS:=$XDG_STATE_HOME/browser-sessions/$BROWSER}"
-	: "${AD_HOC_DIRS:=$TMPDIR/browser-sessions/$BROWSER}"
+	: "${AD_HOC_DIRS:=$XDG_CACHE_HOME/browser-sessions/$BROWSER}"
 
 	local sessions=()
 	local adhoc_sessions=()

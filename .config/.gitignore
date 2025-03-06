@@ -43,10 +43,10 @@
 !rustfmt/**
 !swaylock/
 !swaylock/**
-!systemd/
-!systemd/**
 !tmux/
 !tmux/**
+!user-tmpfiles.d/
+!user-tmpfiles.d/**
 !uwsm/
 !uwsm/**
 !waybar/

@@ -746,6 +746,21 @@
             scope: user
           ignore_errors: true
 
+        - name: user tmp cleanup
+          systemd_service:
+            name: "{{ item }}"
+            enabled: true
+            state: started
+            scope: user
+          ignore_errors: true
+          loop:
+            - systemd-tmpfiles-setup
+            - systemd-tmpfiles-clean.timer
+
+        - name: set up user tmp
+          shell: systemd-tmpfiles --user --create
+          ignore_errors: true
+
       become: true
       become_user: "{{ user }}"
 
