@@ -1,36 +1,41 @@
 [alias]
-	grep-all = "!sh -c 'echo \"error: in dotfiles\" >&2; exit 1'"
+	grep-all = ! echo "error: in dotfiles" >&2; exit 1
 
 [core]
 	excludesFile = .config/git/dotfiles/ignore
+	hooksPath = .config/git/dotfiles/hooks
 
 [oh-my-zsh]
 	hide-info = 1
 
-[submodule ".tmux/plugins/tpm"]
-	path = .tmux/plugins/tpm
-	url = https://github.com/tmux-plugins/tpm.git
 [submodule ".config/alacritty/catppuccin"]
-	path = .config/alacritty/catppuccin
+	active = true
 	url = https://github.com/catppuccin/alacritty.git
-[submodule ".config/waybar/catppuccin"]
-	path = .config/waybar/catppuccin
-	url = https://github.com/catppuccin/waybar.git
-[submodule ".oh-my-zsh"]
-	path = .oh-my-zsh
-	url = https://github.com/ohmyzsh/ohmyzsh.git
-[submodule ".config/wofi/wofi"]
-	path = .config/wofi/wofi
-	url = https://github.com/quantumfate/wofi.git
-[submodule ".config/wofi/catppuccin"]
-	path = .config/wofi/catppuccin
-	url = https://github.com/quantumfate/wofi.git
+
 [submodule ".config/eza/eza-themes"]
-	path = .config/eza/eza-themes
+	active = true
 	url = https://github.com/eza-community/eza-themes.git
-[submodule ".src/aur.archlinux.org/yay"]
-	path = .src/aur.archlinux.org/yay
-	url = https://aur.archlinux.org/yay.git
+
+[submodule ".config/waybar/catppuccin"]
+	active = true
+	url = https://github.com/catppuccin/waybar.git
+
+[submodule ".config/wofi/catppuccin"]
+	active = true
+	url = https://github.com/quantumfate/wofi.git
+
+[submodule ".oh-my-zsh"]
+	active = true
+	url = https://github.com/ohmyzsh/ohmyzsh.git
+
 [submodule ".oh-my-zsh-custom/plugins/fzf-tab"]
-	path = .oh-my-zsh-custom/plugins/fzf-tab
+	active = true
 	url = https://github.com/Aloxaf/fzf-tab
+
+[submodule ".src/aur.archlinux.org/yay"]
+	active = true
+	url = https://aur.archlinux.org/yay.git
+
+[submodule ".tmux/plugins/tpm"]
+	active = true
+	url = https://github.com/tmux-plugins/tpm.git
