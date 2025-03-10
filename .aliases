@@ -1,0 +1,168 @@
+lazyvim() {
+	docker run -w /root -it --rm alpine:edge sh -uelic '
+		apk add git lazygit fzf curl neovim ripgrep alpine-sdk --update
+		git clone https://github.com/LazyVim/starter ~/.config/nvim
+		cd ~/.config/nvim
+		sh
+	'
+}
+alias cd='pushd > /dev/null'
+alias p='popd'
+alias ..='pushd ..'
+alias ...='pushd ../..'
+alias ....='pushd ../../..'
+alias 2..='pushd ../..'
+alias 3..='pushd ../../..'
+alias 4..='pushd ../../../..'
+alias 5..='pushd ../../../../..'
+
+if command -v eza &>/dev/null; then
+	alias l='eza -1 --classify'
+	alias lr='eza -1 -R --classify'
+	alias lt='eza -1 -T --classify'
+	alias la='eza -1 -a --classify'
+	alias lar='eza -1 -a -R --classify'
+	alias lat='eza -1 -a -T --classify'
+	alias ll='eza -l --classify'
+	alias llr='eza -l -R --classify'
+	alias llt='eza -l -T --classify'
+	alias lla='eza -l -a --classify'
+	alias llar='eza -l -a -R --classify'
+	alias llat='eza -l -a -T --classify'
+else
+	alias l='ls -1FG'
+	alias lr='ls -1FGR'
+	alias la='ls -1AFG'
+	alias lar='ls -1AFGR'
+	alias ll='ls -lFG'
+	alias llr='ls -lFGR'
+	alias lla='ls -lAFG'
+	alias llar='ls -lAFGR'
+fi
+
+alias dev-up-no-dotfiles="devcontainer up \
+	--additional-features \"\$(devcontainer-features-menu)\" \
+	--workspace-folder ."
+alias dev-up="dev-up-no-dotfiles \
+	--dotfiles-repository https://github.com/LowEntropyEntity/.dotfiles.git \
+	--dotfiles-target-path=\"~/.dotfiles\" \
+	--dotfiles-install-command \"install.sh\""
+alias dev-clean-no-dotfiles='dev-up-no-dotfiles --remove-existing-container --build-no-cache'
+alias dev-clean='dev-up -remove-existing-container --build-no-cache'
+dev() {
+	tmux set -p @window_prefix "[$(basename $PWD)] "
+	devcontainer exec --remote-env DEV_CONTAINER=1 --workspace-folder . "$@"
+	tmux set -pu @window_prefix
+}
+dev-down() {
+	container_id=$(docker ps -aq --filter "label=devcontainer.local_folder=$PWD")
+	if [ -z "${container_id}" ]; then
+		echo "dev container not found"
+		return 1
+	else
+		docker rm -f $container_id
+	fi
+}
+alias dev-ls='docker container ls -a --filter "label=devcontainer.metadata" --format json | fix-docker-container-formatting | filter-docker-devcontainer-output'
+
+### home git
+alias home='HOME_GIT_MODE=1 GIT_DIR=$HOME_GIT_DIR GIT_WORK_TREE=$HOME_GIT_WORK_TREE git'
+
+### networking
+alias lsports='\ss -tulpn'
+
+### datetime
+alias now='date +"%F %T"'
+
+### clipboard/sharing
+alias share-dir='(tree -a; echo; find . -type f | while read f; do echo "===== $f ====="; cat "$f"; echo; done) | wl-copy'
+alias share-dir-ln='(tree -a; echo; find . -type f | while read f; do echo "===== $f ====="; cat --number "$f"; echo; done) | wl-copy'
+alias share-dir-git='(git ls-tree -r --name-only HEAD; echo; git ls-tree -r --name-only HEAD | while read f; do echo "===== $f ====="; cat "$f"; echo; done) | wl-copy'
+
+### security and auth
+alias totp='oathtool --base32 --totp'
+
+### aws and ai
+alias aws-login='aws sso login --profile'
+alias ai='chatgpt'
+
+alias docker-root='export DOCKER_HOST=$DOCKER_HOST_ROOT'
+alias docker-rootless='export DOCKER_HOST=$DOCKER_HOST_ROOTLESS'
+
+### toggle history
+alias stealth='set +o history'
+alias .stealth='set -o history'
+
+### use aliases while running with sudo
+alias sudo='sudo '
+
+### compression and archives
+alias gz='gzip'
+alias tar.gz='tar -czvf'
+alias tgz='tar -cvzf'
+alias .gz='gzip -d'
+alias .tar='tar -xvf'
+alias .tar.bz2='tar -xvjf'
+alias .tar.gz='tar -xvf'
+alias .tar.xz='tar -xvf'
+alias .tar.zst='tar --zstd -xvf'
+alias .tgz='tar -xvf'
+alias .zip='unzip'
+alias lstar='tar -tf'
+
+### temporary dirs and files
+alias tmp='cd $(mktemp -d)'
+alias tmp.='cd $(mktemp -d --tmpdir=./)'
+alias tmpfile='mktemp'
+alias tmpfile.='mktemp --tmpdir=./'
+alias vtmp='v $(tmpfile)'
+
+### remove and pop
+alias rm.='rm -frv $PWD && p'
+
+### audio testing
+alias speakers='speaker-test -t wav -c 2'
+
+### adb and mirroring
+alias adbmirror='adb shell screenrecord --output-format=h264 - | ffplay -framerate 60 -probesize 32 -sync video -'
+
+### dockerized redis
+alias redis='docker run --rm -p 6379:6379 redis'
+
+### tmux
+if [[ -n "$TMUX" ]]; then
+	alias tmux-restore-off='touch ~/tmux_no_auto_restore'
+	alias tmux-restore-on='rm ~/tmux_no_auto_restore 2> /dev/null || true'
+	alias cds='cd $(tmux display-message -p "#{session_path}") && dirs -c'
+	alias cdw='cd $(tmux display-message -p "#{?@window_path,#{@window_path},#{session_path}}") && dirs -c'
+	alias ss='tmux choose-tree -Zs'
+	sn() {
+		name="$@"
+		tmux new-session -d -s "$name" -c ~ -e FZF_DEFAULT_OPTS="--tmux center,border-native"
+		tmux switch-client -t "$name"
+	}
+	alias srn='tmux rename-session'
+	alias srm='tmux switch-client -n \; kill-session -t "$(tmux display-message -p "#S")" || tmux kill-session'
+	alias ww='tmux choose-tree -Zw'
+	alias wn='tmux new-window -n'
+	alias wrn='tmux rename-window'
+	alias wrm='tmux kill-window'
+	alias v.='IN_CAPTURE_PANE=1 tmux capture-pane -p -J -S - -E - | $EDITOR'
+fi
+
+### editor
+if command -v nvim &>/dev/null; then
+	alias v='nvim'
+elif command -v vim &>/dev/null; then
+	alias v='vim'
+elif command -v vi &>/dev/null; then
+	alias v='vi'
+fi
+
+alias :q='exit'
+
+### vpn
+alias vpn-work='sudo openconnect $EMPLOYER_VPN_ENDPOINT -u $EMPLOYEE_USERNAME --useragent=AnyConnect --authgroup="Full-Tunnel"'
+
+### zsh reload
+alias zshrc='omz reload'
