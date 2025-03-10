@@ -1,0 +1,8 @@
+[alias]
+	grep-all = ! echo "error: in home git" >&2; exit 1
+
+[core]
+	hooksPath = .config/git/home/hooks
+
+[oh-my-zsh]
+	hide-info = 1

@@ -1,0 +1,18 @@
+[submodule ".config/alacritty/catppuccin"]
+	path = .config/alacritty/catppuccin
+	url = https://github.com/catppuccin/alacritty.git
+[submodule ".config/eza/eza-themes"]
+	path = .config/eza/eza-themes
+	url = https://github.com/eza-community/eza-themes.git
+[submodule ".config/waybar/catppuccin"]
+	path = .config/waybar/catppuccin
+	url = https://github.com/catppuccin/waybar.git
+[submodule ".oh-my-zsh"]
+	path = .oh-my-zsh
+	url = https://github.com/ohmyzsh/ohmyzsh.git
+[submodule ".oh-my-zsh-custom/plugins/fzf-tab"]
+	path = .oh-my-zsh-custom/plugins/fzf-tab
+	url = https://github.com/Aloxaf/fzf-tab.git
+[submodule ".config/wofi/catppuccin"]
+	path = .config/wofi/catppuccin
+	url = https://github.com/quantumfate/wofi.git
