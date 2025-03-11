@@ -1,0 +1,9 @@
+{
+	"dev.containers.defaultExtensions": [
+		"github.copilot",
+		"editorconfig.editorconfig",
+		"streetsidesoftware.code-spell-checker",
+		"github.copilot-chat",
+		"eamodio.gitlens"
+	]
+}

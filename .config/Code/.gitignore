@@ -1,4 +1,10 @@
 *
 
+# Allow tracking of the .gitignore file itself
 !.gitignore
+
+# Allow tracking of User/settings.json
+!User/settings.json
+
+# Ensure parent directories of User/settings.json are not ignored
 !User/
