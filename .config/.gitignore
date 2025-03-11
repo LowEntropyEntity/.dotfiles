@@ -1,5 +1,6 @@
 *
 
+!.gitattributes
 !.gitignore
 !user-dirs.locale
 
@@ -41,6 +42,8 @@
 !nvchecker/**
 !nvim/
 !nvim/**
+!obs-studio/
+!obs-studio/**
 !rustfmt/
 !rustfmt/**
 !swaylock/
@@ -55,6 +58,8 @@
 !waybar/**
 !wofi/
 !wofi/**
+!zoom.conf
+!zoomus.conf
 
 Session.vim
 tmp.*

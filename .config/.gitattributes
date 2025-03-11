@@ -1,0 +1,1 @@
+zoom*.conf diff=sops-diff filter=sops-filter-ini

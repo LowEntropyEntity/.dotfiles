@@ -1,0 +1,2 @@
+*.json diff=sops-diff filter=sops-filter-json
+*.ini diff=sops-diff filter=sops-filter-ini

@@ -23,12 +23,12 @@ if command -v eza &>/dev/null; then
 	alias la='eza -1 -a --classify'
 	alias lar='eza -1 -a -R --classify'
 	alias lat='eza -1 -a -T --classify'
-	alias ll='eza -l --classify'
-	alias llr='eza -l -R --classify'
-	alias llt='eza -l -T --classify'
-	alias lla='eza -l -a --classify'
-	alias llar='eza -l -a -R --classify'
-	alias llat='eza -l -a -T --classify'
+	alias ll='eza -lg --classify'
+	alias llr='eza -lg -R --classify'
+	alias llt='eza -lg -T --classify'
+	alias lla='eza -lg -a --classify'
+	alias llar='eza -lg -a -R --classify'
+	alias llat='eza -lg -a -T --classify'
 else
 	alias l='ls -1FG'
 	alias lr='ls -1FGR'
@@ -148,6 +148,7 @@ if [[ -n "$TMUX" ]]; then
 	alias wrn='tmux rename-window'
 	alias wrm='tmux kill-window'
 	alias v.='IN_CAPTURE_PANE=1 tmux capture-pane -p -J -S - -E - | $EDITOR'
+	alias cp.='IN_CAPTURE_PANE=1 tmux capture-pane -p -J -S - -E - | wl-copy'
 fi
 
 ### editor

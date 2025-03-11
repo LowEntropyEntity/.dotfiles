@@ -1,0 +1,6 @@
+**/*.bak
+safe_mode
+
+logs/
+plugin_config/
+profiler_data/
