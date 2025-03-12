@@ -191,11 +191,8 @@
 [includeIf "gitdir:~/.home"]
 	path = ~/.config/git/home/config
 
-[includeIf "gitdir:~/work/"]
-	path = ~/.config/git/home/config
-
-[includeIf "gitdir:~/.home/modules/work"]
+[includeIf "gitdir:~/work/**"]
 	path = ~/work/.gitconfig
 
-[includeIf "gitdir:~/.home/modules/work/"]
+[includeIf "gitdir:~/.home/modules/work"]
 	path = ~/work/.gitconfig
