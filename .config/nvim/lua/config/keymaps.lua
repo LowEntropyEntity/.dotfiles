@@ -38,6 +38,8 @@ keymap.set('n', '<leader>uiln', ':set nornu!<cr>', { desc = 'toggle relative / a
 
 keymap.set({'n', 'x'}, '<leader>crstt', function() require('utils.indentation').spaces_to_tabs() end, { desc = 'convert spaces to tabs' })
 keymap.set({'n', 'x'}, '<leader>crtts', function() require('utils.indentation').tabs_to_spaces() end, { desc = 'convert tabs to spaces' })
+keymap.set({'n', 'x'}, '<leader>crwsxo', function() require('utils.whitespace').remove_only_whitespace() end, { desc = 'delete only whitespace' })
+keymap.set({'n', 'x'}, '<leader>crwsxt', function() require('utils.whitespace').remove_trailing_whitespace() end, { desc = 'delete trailing whitespace' })
 
 keymap.set('n', '<leader>hs', ':set nohlsearch!<cr>', { desc = 'toggle highlight search' })
 keymap.set('n', '<esc>', ':nohlsearch<cr>', { desc = 'unhighlight search', silent = true })
