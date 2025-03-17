@@ -147,8 +147,8 @@ if [[ -n "$TMUX" ]]; then
 	alias wn='tmux new-window -n'
 	alias wrn='tmux rename-window'
 	alias wrm='tmux kill-window'
-	alias v.='IN_CAPTURE_PANE=1 tmux capture-pane -p -J -S - -E - | $EDITOR'
-	alias cp.='IN_CAPTURE_PANE=1 tmux capture-pane -p -J -S - -E - | wl-copy'
+	alias v.='tmux capture-pane -p -J -S - -E - | env IN_CAPTURE_PANE=1 $EDITOR'
+	alias cp.='tmux capture-pane -p -J -S - -E - | wl-copy'
 fi
 
 ### editor

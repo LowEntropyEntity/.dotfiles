@@ -200,12 +200,13 @@ vim.api.nvim_create_autocmd("DirChanged", {
 
 vim.api.nvim_create_autocmd('StdinReadPost', {
 	callback = function()
-		vim.cmd(':$')
+		vim.cmd('$') -- jump to bottom of buffer
 		local in_capture_pane = (os.getenv('IN_CAPTURE_PANE') ~= nil)
 		if in_capture_pane then
-			vim.cmd(':%s/\\_s*\\%$//e') -- remove blank lines at end of buffer
+			vim.cmd('%s/\\_s*\\%$//e') -- remove blank lines at end of buffer
+			vim.cmd('d') -- remove the call that invoked the pane capture
 			vim.cmd('%s/\\s*$//') -- remove trailing spaces
 		end
-		vim.cmd(':set nomodified')
+		vim.cmd('set nomodified')
 	end
 })
