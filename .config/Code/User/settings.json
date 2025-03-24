@@ -6,5 +6,6 @@
 		"github.copilot-chat",
 		"eamodio.gitlens"
 	],
-	"editor.renderWhitespace": "boundary"
+	"editor.renderWhitespace": "boundary",
+	"aws.telemetry": false
 }
